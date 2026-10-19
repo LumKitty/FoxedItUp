@@ -1,13 +1,15 @@
 ## Partial MixItUp support for AltStream.online
 
-This is early alpha software. You are your own, good luck
+This is early alpha software. You are your own, good luck.  
+How it works is we run a separate app that connects to AltStream as if it were a streamer bot and then relays those commands to MixItUp via the developer API
 
 ### Instructions
-1. Run FoxedItUp.exe
-2. It will create a new Settings.json and BanList.txt file
-3. Edit Settings.json and add your AltStream channelname
-4. Review the !command banlist file (see below)
-5. Run FoxedItUp.exe again
+1. Enable the MixItUp developer API: Services -> Developer API -> Connect
+2. Run FoxedItUp.exe
+3. It will create a new Settings.json and BanList.txt file
+4. Edit Settings.json and add your AltStream channelname
+5. Review the !command banlist file (see below)
+6. Run FoxedItUp.exe again
 
 The app should now connect to both AltStream and MixItUp. Any !commands received in chat will be relayed to MixItUp if the command exists there.
 
