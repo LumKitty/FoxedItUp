@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static FoxedItUp.Functions;
+using static FoxedItUp._Settings;
 
 namespace FoxedItUp {
     internal class FoxedItUp {
