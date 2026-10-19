@@ -52,7 +52,6 @@ namespace FoxedItUp {
                             );
 
                             if (MixItUpClient.ChannelFollowed != null) {
-                                Log("Attempting to run MIU command");
                                 MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
                             }
                         }

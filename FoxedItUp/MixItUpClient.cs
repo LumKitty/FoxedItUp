@@ -66,50 +66,54 @@ namespace FoxedItUp {
                             TempCommand.Enabled = (bool)Result["IsEnabled"];
                             TempCommand.ID = (string)Result["ID"];
                             TempCommand.Name = ((string)Result["Name"]).ToLower();
-                            switch (((string)Result["Type"]).ToLower()) {
-                                case "chat":
-                                case "pre-made":
-                                    MIUChatCommand TempChatCommand = new();
-                                    TempChatCommand.Enabled = TempCommand.Enabled;
-                                    TempChatCommand.ID = TempCommand.ID;
-                                    TempChatCommand.Name = TempCommand.Name;
-                                    TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
-                                    TempMIUChatCommands.Add(TempChatCommand);
-                                    Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !",TempChatCommand.TriggerNames)})");
+                            if (TempCommand.Enabled) {
+                                switch (((string)Result["Type"]).ToLower()) {
+                                    case "chat":
+                                    case "pre-made":
+                                        MIUChatCommand TempChatCommand = new();
+                                        TempChatCommand.Enabled = TempCommand.Enabled;
+                                        TempChatCommand.ID = TempCommand.ID;
+                                        TempChatCommand.Name = TempCommand.Name;
+                                        TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
+                                        TempMIUChatCommands.Add(TempChatCommand);
+                                        Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)})");
 
-                                    break;
-                                case "twitch channel points":
-                                    if (Settings.ParseChannelPointsFromTwitch) {
-                                        TempMIUChannelPoints.Add(TempCommand);
-                                        Log($"Added twitch redeem: {TempCommand.Name}");
-                                    }
-                                    break;
-                                case "kick channel points":
-                                    if (Settings.ParseChannelPointsFromTwitch) {
-                                        TempMIUChannelPoints.Add(TempCommand);
-                                        Log($"Added kick redeem: {TempCommand.Name}");
-                                    }
-                                    break;
-                                case "velora channel points":
-                                    if (Settings.ParseChannelPointsFromTwitch) {
-                                        TempMIUChannelPoints.Add(TempCommand);
-                                        Log($"Added velora redeem: {TempCommand.Name}");
-                                    }
-                                    break;
-                                case "vpzone channel points":
-                                    if (Settings.ParseChannelPointsFromTwitch) {
-                                        TempMIUChannelPoints.Add(TempCommand);
-                                        Log($"Added vpzone redeem: {TempCommand.Name}");
-                                    }
-                                    break;
-                                case "event":
-                                    switch (((string)Result["Name"]).ToLower()) {
-                                        case "channel raided": ChannelRaided = TempCommand; Log("Added channel raided event"); break;
-                                        case "channel followed": ChannelFollowed = TempCommand; Log("Added channel followed event"); break;
-                                        case "channel subscribed": ChannelSubscribed = TempCommand; Log("Added channel subscribed event"); break;
-                                        case "generic donation": ChannelDonation = TempCommand; Log("Added channel donated event"); break;
-                                    }
-                                    break;
+                                        break;
+                                    case "twitch channel points":
+                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                            TempMIUChannelPoints.Add(TempCommand);
+                                            Log($"Added twitch redeem: {TempCommand.Name}");
+                                        }
+                                        break;
+                                    case "kick channel points":
+                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                            TempMIUChannelPoints.Add(TempCommand);
+                                            Log($"Added kick redeem: {TempCommand.Name}");
+                                        }
+                                        break;
+                                    case "velora channel points":
+                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                            TempMIUChannelPoints.Add(TempCommand);
+                                            Log($"Added velora redeem: {TempCommand.Name}");
+                                        }
+                                        break;
+                                    case "vpzone channel points":
+                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                            TempMIUChannelPoints.Add(TempCommand);
+                                            Log($"Added vpzone redeem: {TempCommand.Name}");
+                                        }
+                                        break;
+                                    case "event":
+                                        switch (((string)Result["Name"]).ToLower()) {
+                                            case "channel raided": ChannelRaided = TempCommand; Log("Added channel raided event"); break;
+                                            case "channel followed": ChannelFollowed = TempCommand; Log("Added channel followed event"); break;
+                                            case "channel subscribed": ChannelSubscribed = TempCommand; Log("Added channel subscribed event"); break;
+                                            case "generic donation": ChannelDonation = TempCommand; Log("Added channel donated event"); break;
+                                        }
+                                        break;
+                                }
+                            } else {
+                                Log($"Skipping disabled command: {TempCommand.Name}");
                             }
                         } else {
                             Log($"Skipping banned command: {Result["Name"]}");
