@@ -28,7 +28,6 @@ Events fired from this should set $PlatformEx = altstream. I have no idea if thi
 ### Security Warning (BanList.txt)
 MixItUp does not give me visibility of any permissions you have set on commands, and the dev API bypasses permissions anyway. This means that
 by default commands you have restricted to Moderators only, or Streamer only, are made available to everyone on AltStream.  
-AltStreamLib doesn't currently let me see see if a user on AltStream is a moderator etc. either.  
 
 Therefore the only way to remain secure is to ban all !commands that are not generally available to everyone. By default I fill this list with
 the MixItUp pre-made commands that are mod-only, but if you have made any custom commands, you will need to add them here and actually test that
