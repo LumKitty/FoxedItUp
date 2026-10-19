@@ -1,7 +1,8 @@
 ## Partial MixItUp support for AltStream.online
 
 This is early alpha software. You are your own, good luck.  
-How it works is we run a separate app that connects to AltStream as if it were a streamer bot and then relays those commands to MixItUp via the developer API
+How it works is we run a separate app that connects to AltStream as if it were a streamer bot and then relays those commands to MixItUp via the developer API.  
+The purpose of this app is to bring basic functionality for Twitch streamers moving to AltStream, while we wait for the MixItUp devs to notice the site and implement full support!  
 
 ### Instructions
 1. Enable the MixItUp developer API: Services -> Developer API -> Connect
