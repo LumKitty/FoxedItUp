@@ -43,9 +43,12 @@ Log($"Reading banned commands from {BanListFile}");
 Settings.BannedCommands = File.ReadAllLines(BanListFile);
 Log($"Banned commands: {Settings.BannedCommands.Count()}");
 
-FoxedItUp.FoxedItUp AltConnection = new FoxedItUp.FoxedItUp();
+FoxedItUp.AltStream AltConnection = new FoxedItUp.AltStream();
 FoxedItUp.MixItUpClient.UpdateMiuCommands();
-AltConnection.Connect("LumKitty");
+AltConnection.Connect(Settings.ChannelName);
+
+//FoxedItUp.AltStream_Unofficial AltConnectionEx = new();
+//AltConnectionEx.Connect(Settings.ChannelName);
 
 System.Threading.Thread.Sleep(5000);
 Log("");

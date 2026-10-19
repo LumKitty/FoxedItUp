@@ -15,7 +15,7 @@ using static FoxedItUp.Functions;
 using static FoxedItUp._Settings;
 
 namespace FoxedItUp {
-    internal class FoxedItUp {
+    internal class AltStream {
         private int ConnectAttempts = 0;
         internal EventSubClient AltEventClient;
         internal void Connect(string ChannelName) {
