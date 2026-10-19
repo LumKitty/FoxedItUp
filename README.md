@@ -19,5 +19,5 @@ Content Warning becomes !contentwarning)
 
 Any channel point redeems must have the exact same name on AltStream as they do on Twitch
 
-Channel Raided alerts *might* work, but untested
+Channel Raided alerts *might* work, but untested.  
 Follow / Sub / Tips don't work as they are not yet officially available in the API.
