@@ -21,3 +21,7 @@ Any channel point redeems must have the exact same name on AltStream as they do 
 
 Channel Raided alerts *might* work, but untested.  
 Follow / Sub / Tips don't work as they are not yet officially available in the API.
+
+### Credits
+Uses [AltStreamLib](https://github.com/MachaCeleste/AltStreamLib) by [MachaCeleste](https://altstream.online/machaceleste)  
+Give me a follow on [AltStream](https://altstream.online/LumKitty) or [Twitch](https://twitch.tv/LumKitty)
