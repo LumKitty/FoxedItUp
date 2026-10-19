@@ -12,7 +12,8 @@ if (!SettingsFile.Load(JsonFile)) {
 }
 
 if (!File.Exists(BanListFile)) {
-    Log($"BanList file not found. Creating default files");
+    Log("");
+    Log($"BanList file not found. Creating {BanListFile}");
     File.WriteAllText(BanListFile, @"addcommand
 deletequote
 disablecommand
@@ -21,6 +22,7 @@ settitle
 setusertitle
 startgiveaway
 updatecommand");
+    Log("");
     Log("Please review this file and enter any commands that you do not want available");
     Log("to general users. MixItUp does not give me information on who has permission");
     Log("to use what commands and this method bypasses all permissions. You should ban"); 
@@ -28,7 +30,11 @@ updatecommand");
 }
 
 if (String.IsNullOrEmpty(Settings.ChannelName)) {
+    Log("");
     Log($"Please set your channelname in {JsonFile}");
+    Log("");
+    Log("Press ENTER to exit");
+    Console.ReadLine();
     return 1;
 }
 
@@ -42,6 +48,7 @@ FoxedItUp.MixItUpClient.UpdateMiuCommands();
 AltConnection.Connect("LumKitty");
 
 System.Threading.Thread.Sleep(5000);
+Log("");
 Log("Press ENTER to exit");
 Console.ReadLine();
 return 0;
