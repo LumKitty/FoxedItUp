@@ -36,4 +36,5 @@ they get banned. I will not be held responsible if a rando runs your !endstream 
 
 ### Credits
 Uses [AltStreamLib](https://github.com/MachaCeleste/AltStreamLib) by [MachaCeleste](https://altstream.online/machaceleste)  
+Testing: [BeoWynn](https://altstream.online/beowynn)
 Give me a follow on [AltStream](https://altstream.online/LumKitty) or [Twitch](https://twitch.tv/LumKitty)
