@@ -15,10 +15,23 @@ using static FoxedItUp.Functions;
 using static FoxedItUp._Settings;
 
 namespace FoxedItUp {
-    internal class AltStream {
-        private int ConnectAttempts = 0;
-        internal EventSubClient AltEventClient;
-        internal void Connect(string ChannelName) {
+    internal static class AltStream {
+        private const int ConnectionTimeout = 30;
+        private static string ChannelName;
+        internal static AltStreamLib.Api.ApiClient AltAPI = new();
+        private static int ConnectAttempts = 0;
+        private static bool Connected = false;
+        private static System.Timers.Timer ConnectTimer;
+        internal static EventSubClient AltEventClient;
+        
+        internal static void Connect(string _ChannelName) {
+            SetWindowTitle("Connecting");
+            ChannelName = _ChannelName;
+            ConnectTimer = new();
+            ConnectTimer.Interval = ConnectionTimeout * 1000;
+            ConnectTimer.Elapsed += ConnectTimer_Elapsed;
+            ConnectTimer.AutoReset = false;
+            
             AltEventClient = new EventSubClient(ChannelName);
             AltEventClient.OnMessageReceived += AltEventClient_OnMessageReceived;
             AltEventClient.OnHighlightReceived += AltEventClient_OnHighlightReceived;
@@ -32,14 +45,24 @@ namespace FoxedItUp {
 
             Log("Connecting to AltStream");
             AltEventClient.ConnectAsync();
+            ConnectTimer.Start();
         }
 
-        private void AltEventClient_OnUnhandledReceived(EventMessage obj) {
+        private static void ConnectTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e) {
+            if (!Connected) {
+                Log("Connection timed out");
+                ConnectTimer.Stop();
+                ConnectTimer.Dispose();
+                HandleConnectionFailure();
+            }
+        }
+
+        private static void AltEventClient_OnUnhandledReceived(EventMessage obj) {
             Log("Unrecognised Event:");
             Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
         }
 
-        private void AltEventClient_OnRedemptionReceived(EventMessage obj) {
+        private static void AltEventClient_OnRedemptionReceived(EventMessage obj) {
             AltStreamLib.EventSub.Chat.Models.Events.Redemption RedeemEvent = (AltStreamLib.EventSub.Chat.Models.Events.Redemption)obj.Event;
             Log($"* {RedeemEvent.From} redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
             string PointsName = RedeemEvent.RewardName.ToLower();
@@ -53,15 +76,15 @@ namespace FoxedItUp {
                     new JProperty("UserColor", obj.Context.UserColor)
                 );
                 if (!string.IsNullOrEmpty(RedeemEvent.UserInput)) { SpecialIdentifiers.Add(new JProperty("Message", RedeemEvent.UserInput)); }
-                if (!string.IsNullOrEmpty(obj.Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", $"https://altstream.online{obj.Context.AuthorImage}")); }
-                PointsCommand.RunCommand(RedeemEvent.UserInput, Settings.SpoofPlatform, SpecialIdentifiers);
+                if (!string.IsNullOrEmpty(obj.Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(obj.Context.AuthorImage))); }
+                PointsCommand.RunCommand(RedeemEvent.UserInput, Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
             } else {
                 Log("Could not find command");
             }
 
         }
 
-        private void AltEventClient_OnRaidReceived(EventMessage obj) {
+        private static void AltEventClient_OnRaidReceived(EventMessage obj) {
             AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming RaidEvent = (AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming)obj.Event;
             Log($"* {RaidEvent.SourceUsername} raided with {RaidEvent.Viewers}");
 
@@ -72,11 +95,11 @@ namespace FoxedItUp {
                 new JProperty("UserAvatar", obj.Context.AuthorImage),
                 new JProperty("UserColor", obj.Context.UserColor)
             );
-            if (!string.IsNullOrEmpty(obj.Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", $"https://altstream.online{obj.Context.AuthorImage}")); }
-            MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers);
+            if (!string.IsNullOrEmpty(obj.Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(obj.Context.AuthorImage))); }
+            MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
         }
 
-        private void AltMessageReceived(AltStreamLib.EventSub.Chat.Models.Message Context, bool Highlighted = false) {
+        private static void AltMessageReceived(AltStreamLib.EventSub.Chat.Models.Message Context, bool Highlighted = false) {
 
             try {
 
@@ -114,14 +137,14 @@ namespace FoxedItUp {
                             new JProperty("UserDisplayName", Context.AuthorUsername),
                             new JProperty("UserColor", Context.UserColor)
 );
-                            if (!string.IsNullOrEmpty(Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", $"https://altstream.online{Context.AuthorImage}")); }
+                            if (!string.IsNullOrEmpty(Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(Context.AuthorImage))); }
 
                             ChatCommand.RunCommand(Args, Settings.SpoofPlatform, new JObject(
                                 new JProperty("UserName", Context.AuthorUsername),
                                 new JProperty("UserDisplayName", Context.AuthorUsername),
                                 new JProperty("UserAvatar", Context.AuthorImage),
                                 new JProperty("UserColor", Context.UserColor)
-                            ));
+                            ), "altstream");
                         } else {
                             Log("Could not find command");
                         }
@@ -129,35 +152,48 @@ namespace FoxedItUp {
                 } else {
                     Log($"<{Context.AuthorUsername}> {Context.Text}");
                 }
-            } catch (Exception e) {
-                Log(e.ToString());
+            } catch (Exception ex) {
+                Log(ex.ToString());
             }
         }
-        private void AltEventClient_OnHighlightReceived(EventMessage obj) {
+        private static void AltEventClient_OnHighlightReceived(EventMessage obj) {
             AltMessageReceived(obj.Context,true);
         }
-        private void AltEventClient_OnMessageReceived(Message obj) {
+        private static void AltEventClient_OnMessageReceived(Message obj) {
             AltMessageReceived(obj);
 
         }
-        private void AltEventClient_OnConnected() {
-            Log($"Connected");
+        private static void AltEventClient_OnConnected() {
+            Connected = true;
+            ConnectTimer.Stop();
+            ConnectTimer.Dispose();
+            Log($"Connected to channel {ChannelName}");
+            SetWindowTitle("Connected");
             ConnectAttempts = 0;
         }
-        private void AltEventClient_OnDisconnected() {
+        private static void AltEventClient_OnDisconnected() {
+            Connected = false;
+            Log("Disconnected.");
+            HandleConnectionFailure();
+        }
+        private static async Task HandleConnectionFailure() {
+            SetWindowTitle("Disconnected");
             ConnectAttempts++;
             int Delay;
-            switch(ConnectAttempts) {
+            switch (ConnectAttempts) {
                 case 1: Delay = 1; break;
                 case 2: Delay = 5; break;
                 case 3: Delay = 10; break;
                 case 4: Delay = 20; break;
-                default:Delay = 30; break;
+                default: Delay = 30; break;
             }
-            Log($"Disconnected. Waiting {Delay} seconds to reconnect (Attempts: {ConnectAttempts})");
-            System.Threading.Thread.Sleep(Delay);
-            Log("Reconnecting to AltStream");
-            AltEventClient.ConnectAsync();
+            Log($"Waiting {Delay} seconds to reconnect (Attempts: {ConnectAttempts})");
+            await Task.Delay(Delay * 1000);
+            if (Connected) {
+                Log("Never mind! We got connected while waiting!");
+            } else { 
+                Connect(ChannelName);
+            }
         }
     }
 }

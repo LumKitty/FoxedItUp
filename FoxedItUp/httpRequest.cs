@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static FoxedItUp.Functions;
+using AltStreamLib;
 
 namespace FoxedItUp {
     internal static class httpRequest {
@@ -17,7 +18,7 @@ namespace FoxedItUp {
 
                 switch (Method) {
                     case "POST":
-                        Log("POST: " + URL + " : " + Content);
+                        //Log("POST: " + URL + " : " + Content);
                         var PostResult = await client.PostAsync(URL, jsonData);
                         Response = PostResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)PostResult.StatusCode);
@@ -25,14 +26,14 @@ namespace FoxedItUp {
                         PostResult.Dispose();
                         break;
                     case "PUT":
-                        Log("PUT: " + URL + " : " + Content);
+                        //Log("PUT: " + URL + " : " + Content);
                         var PutResult = await client.PutAsync(URL, jsonData);
                         Response = PutResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)PutResult.StatusCode);
                         PutResult.Dispose();
                         break;
                     case "GET":
-                        Log("GET: " + URL + " : " + Content);
+                        //Log("GET: " + URL + " : " + Content);
                         var GetResult = await client.GetAsync(URL);
                         Response = GetResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)GetResult.StatusCode);

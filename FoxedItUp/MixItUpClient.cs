@@ -17,10 +17,12 @@ namespace FoxedItUp {
         internal bool Enabled;
         internal bool AllowUser;
 
-        internal void RunCommand(string Arguments, string Platform, JObject? SpecialIdentifiers) {
-            JObject Content = new JObject( new JProperty("Platform", Platform));
+        internal void RunCommand(string Arguments, string SpoofPlatform, JObject? SpecialIdentifiers, string RealPlatform) {
+            JObject Content = new JObject( new JProperty("Platform", SpoofPlatform));
             if (!String.IsNullOrEmpty(Arguments)) { Content.Add(new JProperty("Arguments", Arguments)); }
-            if (SpecialIdentifiers != null) { Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers)); }
+            if (SpecialIdentifiers == null) { SpecialIdentifiers = new JObject(); }
+            SpecialIdentifiers.Add(new JObject("PlatformEx", RealPlatform));
+            Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers));
             HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString());
         }
 

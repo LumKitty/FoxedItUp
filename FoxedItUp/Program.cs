@@ -7,6 +7,9 @@ using static FoxedItUp._Settings;
 string AppDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 string BanListFile = AppDir+ "\\BanList.txt";
 string JsonFile = AppDir + "\\Settings.json";
+
+SetWindowTitle("init");
+
 if (!SettingsFile.Load(JsonFile)) {
     SettingsFile.Save(JsonFile);
 }
@@ -43,12 +46,10 @@ Log($"Reading banned commands from {BanListFile}");
 Settings.BannedCommands = File.ReadAllLines(BanListFile);
 Log($"Banned commands: {Settings.BannedCommands.Count()}");
 
-FoxedItUp.AltStream AltConnection = new FoxedItUp.AltStream();
 FoxedItUp.MixItUpClient.UpdateMiuCommands();
-AltConnection.Connect(Settings.ChannelName);
+AltStream.Connect(Settings.ChannelName);
 
-//FoxedItUp.AltStream_Unofficial AltConnectionEx = new();
-//AltConnectionEx.Connect(Settings.ChannelName);
+AltStream_Unofficial.Connect(Settings.ChannelName);
 
 System.Threading.Thread.Sleep(5000);
 Log("");

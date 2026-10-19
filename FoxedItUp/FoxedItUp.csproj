@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <Reference Include="AltStreamLib">
-      <HintPath>..\..\Libs\AltStreamLib-v0.2.11-Net9.0\AltStreamLib.dll</HintPath>
+      <HintPath>..\..\Libs\AltStreamLib-v0.2.16-net9.0\AltStreamLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 
