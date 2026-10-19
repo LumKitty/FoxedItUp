@@ -96,7 +96,7 @@ namespace FoxedItUp {
                 new JProperty("UserColor", obj.Context.UserColor)
             );
             if (!string.IsNullOrEmpty(obj.Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(obj.Context.AuthorImage))); }
-            MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
+            if (MixItUpClient.ChannelRaided != null) { MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream"); }
         }
 
         private static void AltMessageReceived(AltStreamLib.EventSub.Chat.Models.Message Context, bool Highlighted = false) {

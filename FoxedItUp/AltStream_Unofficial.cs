@@ -49,7 +49,7 @@ namespace FoxedItUp {
                                 new JProperty("UserColor", UserInfo.ChatColor),
                                 new JProperty("UserAvatar", HandleRelativePaths(User["image"].ToString()))
                             );
-                            MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
+                            if (MixItUpClient.ChannelFollowed != null) { MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream"); }
                         }
                     }
                     //Log($"Updating LastEvent to {NewEvent}");

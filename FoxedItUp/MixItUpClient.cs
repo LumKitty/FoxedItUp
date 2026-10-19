@@ -39,11 +39,10 @@ namespace FoxedItUp {
 
         internal static List<MIUChatCommand> MIUChatCommands = new();
         internal static List<MIUCommand> MIUChannelPoints = new();
-        internal static MIUCommand ChannelRaided;
-        internal static MIUCommand ChannelFollowed;
-        internal static MIUCommand ChannelSubscribed;
-        internal static MIUCommand ChannelDonation;
-
+        internal static MIUCommand? ChannelRaided;
+        internal static MIUCommand? ChannelFollowed;
+        internal static MIUCommand? ChannelSubscribed;
+        internal static MIUCommand? ChannelDonation;
 
         internal static async Task UpdateMiuCommands() {
             try {
@@ -121,6 +120,8 @@ namespace FoxedItUp {
                 } while (count >= 10);
                 if (TempMIUChatCommands.Count > 0) { MIUChatCommands = TempMIUChatCommands; }
                 if (TempMIUChannelPoints.Count > 0) { MIUChannelPoints = TempMIUChannelPoints; }
+                if (ChannelRaided == null) { Log("Warning: We did not find a \"Generic Channel Raided\" event. \r\nIf you used \"Twitch Channel Raided\" please copy it as a generic"); }
+                if (ChannelFollowed == null) { Log("Warning: We did not find a \"Generic Channel Followed\" event. \r\nIf you used \"Twitch Channel Followed\" please copy it as a generic"); }
             } catch (Exception e) {
                 Log(e.ToString());
             }
