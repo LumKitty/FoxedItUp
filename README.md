@@ -17,10 +17,13 @@ Note: Only the main name will be used, as MixItUp doesn't let me see any of the 
 and the options are !shoutout and !so, only !shoutout will work. If there are any spaces in your command name, these will be removed (e.g.
 Content Warning becomes !contentwarning)
 
-Any channel point redeems must have the exact same name on AltStream as they do on Twitch
+Any channel point redeems must have the exact same name on AltStream as they do on Twitch.
 
-Channel Raided alerts *might* work, but untested.  
-Follow / Sub / Tips don't work as they are not yet officially available in the API.
+Channel Raided alerts *might* work, but untested. Somebody raid me please! :3  
+Raid and Follow alerts must use the Generic -> "Channel Raided" event in MIU, not the "Twitch Channel Raided" event
+Subs / Tips don't work as they are not yet officially available in the API.
+
+Events fired from this should set $PlatformEx = altstream. I have no idea if this actually gets passed through
 
 ### Security Warning (BanList.txt)
 MixItUp does not give me visibility of any permissions you have set on commands, and the dev API bypasses permissions anyway. This means that
