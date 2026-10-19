@@ -38,8 +38,9 @@ namespace FoxedItUp {
                     foreach (JObject Event in Events.Reverse()) {
                         TimeStamp = DateTime.Parse(Event["timestamp"].ToString());
                         //Log($"Found event with timestamp {TimeStamp} comparing to {LastEvent}");
+                        //Log(Event.ToString());
                         if ((TimeStamp > LastEvent) && (Event["type"].ToString() == "follow")) {
-                            Log($"Found valid follow event with timestamp {TimeStamp}");
+                            //Log($"Found valid follow event with timestamp {TimeStamp}");
                             if (TimeStamp > NewEvent) { NewEvent = TimeStamp; }
                             JObject User = (JObject)Event["user"];
                             AltStreamLib.Api.v1.Models.UserSettingsResponse UserInfo = await AltStream.AltAPI.GetUserSettingsInfoAsync(User["username"].ToString());
@@ -49,7 +50,11 @@ namespace FoxedItUp {
                                 new JProperty("UserColor", UserInfo.ChatColor),
                                 new JProperty("UserAvatar", HandleRelativePaths(User["image"].ToString()))
                             );
-                            if (MixItUpClient.ChannelFollowed != null) { MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream"); }
+
+                            if (MixItUpClient.ChannelFollowed != null) {
+                                Log("Attempting to run MIU command");
+                                MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
+                            }
                         }
                     }
                     //Log($"Updating LastEvent to {NewEvent}");

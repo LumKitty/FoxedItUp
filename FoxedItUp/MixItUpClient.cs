@@ -21,7 +21,7 @@ namespace FoxedItUp {
             JObject Content = new JObject( new JProperty("Platform", SpoofPlatform));
             if (!String.IsNullOrEmpty(Arguments)) { Content.Add(new JProperty("Arguments", Arguments)); }
             if (SpecialIdentifiers == null) { SpecialIdentifiers = new JObject(); }
-            SpecialIdentifiers.Add(new JObject("PlatformEx", RealPlatform));
+            SpecialIdentifiers.Add(new JProperty("PlatformEx", RealPlatform));
             Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers));
             HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString());
         }
@@ -39,10 +39,10 @@ namespace FoxedItUp {
 
         internal static List<MIUChatCommand> MIUChatCommands = new();
         internal static List<MIUCommand> MIUChannelPoints = new();
-        internal static MIUCommand? ChannelRaided;
-        internal static MIUCommand? ChannelFollowed;
-        internal static MIUCommand? ChannelSubscribed;
-        internal static MIUCommand? ChannelDonation;
+        internal static MIUCommand? ChannelRaided = null;
+        internal static MIUCommand? ChannelFollowed = null;
+        internal static MIUCommand? ChannelSubscribed = null;
+        internal static MIUCommand? ChannelDonation = null;
 
         internal static async Task UpdateMiuCommands() {
             try {
@@ -75,7 +75,7 @@ namespace FoxedItUp {
                                     TempChatCommand.Name = TempCommand.Name;
                                     TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
                                     TempMIUChatCommands.Add(TempChatCommand);
-                                    Log($"Added chat command: {TempChatCommand.Name}");
+                                    Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !",TempChatCommand.TriggerNames)})");
 
                                     break;
                                 case "twitch channel points":
