@@ -11,10 +11,27 @@ if (!SettingsFile.Load(JsonFile)) {
     SettingsFile.Save(JsonFile);
 }
 
+if (!File.Exists(BanListFile)) {
+    Log($"BanList file not found. Creating default files");
+    File.WriteAllText(BanListFile, @"addcommand
+deletequote
+disablecommand
+setgame
+settitle
+setusertitle
+startgiveaway
+updatecommand");
+    Log("Please review this file and enter any commands that you do not want available");
+    Log("to general users. MixItUp does not give me information on who has permission");
+    Log("to use what commands and this method bypasses all permissions. You should ban"); 
+    Log("all !commands that you don't want available to everyone");
+}
+
 if (String.IsNullOrEmpty(Settings.ChannelName)) {
     Log($"Please set your channelname in {JsonFile}");
     return 1;
 }
+
 
 Log($"Reading banned commands from {BanListFile}");
 Settings.BannedCommands = File.ReadAllLines(BanListFile);
