@@ -107,50 +107,54 @@ namespace FoxedItUp {
                 string Command = "";
                 string Args = "";
 
-                if (Context.Text.Substring(0, 1) == "!") {
-                    Log($"Received command message {Context.Text}");
-                    int n = Context.Text.IndexOf(' ');
-                    Log($"Index {n}");
-                    switch (n) {
-                        case 1:
-                        case 0:
-                            Log($"Invalid message {Context.Text}"); break;
-                        case -1:
-                            Command = Context.Text.Substring(1);
-                            Log($"* {Context.AuthorUsername} used command '{Command}'");
-                            break;
-                        default:
-                            Command = Context.Text.Substring(1, n - 1);
-                            Args = Context.Text.Substring(n + 1);
-                            Log($"* {Context.AuthorUsername} used command '{Command}' with args: {Args}");
-                            break;
-                    }
+                if (!string.IsNullOrEmpty(Context.Text)) {
+                    if (Context.Text.Substring(0, 1) == "!") {
+                        Log($"Received command message {Context.Text}");
+                        int n = Context.Text.IndexOf(' ');
+                        Log($"Index {n}");
+                        switch (n) {
+                            case 1:
+                            case 0:
+                                Log($"Invalid message {Context.Text}"); break;
+                            case -1:
+                                Command = Context.Text.Substring(1);
+                                Log($"* {Context.AuthorUsername} used command '{Command}'");
+                                break;
+                            default:
+                                Command = Context.Text.Substring(1, n - 1);
+                                Args = Context.Text.Substring(n + 1);
+                                Log($"* {Context.AuthorUsername} used command '{Command}' with args: {Args}");
+                                break;
+                        }
 
-                    if (!String.IsNullOrEmpty(Command)) {
-                        Log($"Attempting to run command {Command}");
-                        MIUChatCommand? ChatCommand = MixItUpClient.MIUChatCommands.FirstOrDefault(i => i.TriggerNames.Contains(Command));
-                        if (ChatCommand != null) {
-                            Log($"Attempting to run command: {ChatCommand.ID}");
+                        if (!String.IsNullOrEmpty(Command)) {
+                            Log($"Attempting to run command {Command}");
+                            MIUChatCommand? ChatCommand = MixItUpClient.MIUChatCommands.FirstOrDefault(i => i.TriggerNames.Contains(Command));
+                            if (ChatCommand != null) {
+                                Log($"Attempting to run command: {ChatCommand.ID}");
 
-                            JObject SpecialIdentifiers = new JObject(
-                            new JProperty("UserName", Context.AuthorUsername),
-                            new JProperty("UserDisplayName", Context.AuthorUsername),
-                            new JProperty("UserColor", Context.UserColor)
-);
-                            if (!string.IsNullOrEmpty(Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(Context.AuthorImage))); }
-
-                            ChatCommand.RunCommand(Args, Settings.SpoofPlatform, new JObject(
+                                JObject SpecialIdentifiers = new JObject(
                                 new JProperty("UserName", Context.AuthorUsername),
                                 new JProperty("UserDisplayName", Context.AuthorUsername),
-                                new JProperty("UserAvatar", Context.AuthorImage),
                                 new JProperty("UserColor", Context.UserColor)
-                            ), "altstream");
-                        } else {
-                            Log("Could not find command");
+    );
+                                if (!string.IsNullOrEmpty(Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(Context.AuthorImage))); }
+
+                                ChatCommand.RunCommand(Args, Settings.SpoofPlatform, new JObject(
+                                    new JProperty("UserName", Context.AuthorUsername),
+                                    new JProperty("UserDisplayName", Context.AuthorUsername),
+                                    new JProperty("UserAvatar", Context.AuthorImage),
+                                    new JProperty("UserColor", Context.UserColor)
+                                ), "altstream");
+                            } else {
+                                Log("Could not find command");
+                            }
                         }
+                    } else {
+                        Log($"<{Context.AuthorUsername}> {Context.Text}");
                     }
                 } else {
-                    Log($"<{Context.AuthorUsername}> {Context.Text}");
+                    Log($"Received empty message: {Context.ToString()}");
                 }
             } catch (Exception ex) {
                 Log(ex.ToString());
