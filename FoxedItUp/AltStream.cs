@@ -27,10 +27,12 @@ namespace FoxedItUp {
         internal static void Connect(string _ChannelName) {
             SetWindowTitle("Connecting");
             ChannelName = _ChannelName;
-            ConnectTimer = new();
-            ConnectTimer.Interval = ConnectionTimeout * 1000;
-            ConnectTimer.Elapsed += ConnectTimer_Elapsed;
-            ConnectTimer.AutoReset = false;
+            if (Settings.EnableOutdatedWorkaround) {
+                ConnectTimer = new();
+                ConnectTimer.Interval = ConnectionTimeout * 1000;
+                ConnectTimer.Elapsed += ConnectTimer_Elapsed;
+                ConnectTimer.AutoReset = false;
+            }
             
             AltEventClient = new EventSubClient(ChannelName);
             AltEventClient.OnMessageReceived += AltEventClient_OnMessageReceived;
@@ -45,14 +47,16 @@ namespace FoxedItUp {
 
             Log("Connecting to AltStream");
             AltEventClient.ConnectAsync();
-            ConnectTimer.Start();
+            if (Settings.EnableOutdatedWorkaround) { ConnectTimer.Start(); }
         }
 
         private static void ConnectTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e) {
             if (!Connected) {
                 Log("Connection timed out");
-                ConnectTimer.Stop();
-                ConnectTimer.Dispose();
+                if (Settings.EnableOutdatedWorkaround) {
+                    ConnectTimer.Stop();
+                    ConnectTimer.Dispose();
+                }
                 HandleConnectionFailure();
             }
         }
@@ -169,8 +173,10 @@ namespace FoxedItUp {
         }
         private static void AltEventClient_OnConnected() {
             Connected = true;
-            ConnectTimer.Stop();
-            ConnectTimer.Dispose();
+            if (Settings.EnableOutdatedWorkaround) {
+                ConnectTimer.Stop();
+                ConnectTimer.Dispose();
+            }
             Log($"Connected to channel {ChannelName}");
             SetWindowTitle("Connected");
             ConnectAttempts = 0;

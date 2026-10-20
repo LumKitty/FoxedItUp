@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FoxedItUp {
     internal static class Functions {
-        internal const string WindowTitle = "FoxedItUp v0.2.3";
+        internal const string WindowTitle = "FoxedItUp v0.2.4";
         
         internal static void Log (string Message) {
             Console.WriteLine(Message);
