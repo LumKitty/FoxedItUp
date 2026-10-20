@@ -89,11 +89,12 @@ namespace FoxedItUp {
         }
 
         private static void AltEventClient_OnRaidReceived(EventMessage obj) {
+            Log("Raid received");
             AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming RaidEvent = (AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming)obj.Event;
             Log($"* {RaidEvent.SourceUsername} raided with {RaidEvent.Viewers}");
 
             JObject SpecialIdentifiers = new JObject(
-                new JProperty("RaidViewerCount", RaidEvent.Viewers),
+                new JProperty("RaidViewerCount", RaidEvent.Viewers.ToString()), // Yes, really! It fails if this is an int
                 new JProperty("UserName", RaidEvent.SourceUsername),
                 new JProperty("UserDisplayName", RaidEvent.SourceUsername),
                 new JProperty("UserAvatar", obj.Context.AuthorImage),
