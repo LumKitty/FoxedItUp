@@ -97,7 +97,7 @@ namespace FoxedItUp {
                 new JProperty("RaidViewerCount", RaidEvent.Viewers.ToString()), // Yes, really! It fails if this is an int
                 new JProperty("UserName", RaidEvent.SourceUsername),
                 new JProperty("UserDisplayName", RaidEvent.SourceUsername),
-                new JProperty("UserAvatar", obj.Context.AuthorImage),
+                new JProperty("UserAvatar", HandleRelativePaths(obj.Context.AuthorImage)),
                 new JProperty("UserColor", obj.Context.UserColor)
             );
             if (!string.IsNullOrEmpty(obj.Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(obj.Context.AuthorImage))); }
@@ -185,7 +185,9 @@ namespace FoxedItUp {
         private static void AltEventClient_OnDisconnected() {
             Connected = false;
             Log("Disconnected.");
-            HandleConnectionFailure();
+            if (Settings.EnableOutdatedWorkaround) {
+                HandleConnectionFailure();
+            }
         }
         private static async Task HandleConnectionFailure() {
             SetWindowTitle("Disconnected");

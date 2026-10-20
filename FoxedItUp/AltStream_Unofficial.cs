@@ -45,9 +45,6 @@ namespace FoxedItUp {
                             string EventType = Event["type"].ToString().ToLower();
                             switch (EventType) { 
                                 case "follow":
-                                //case "raid":
-                                    //Log($"Found valid follow event with timestamp {TimeStamp}");
-                                    
                                     JObject User = (JObject)Event["user"];
                                     AltStreamLib.Api.v1.Models.UserSettingsResponse UserInfo = await AltStream.AltAPI.GetUserSettingsInfoAsync(User["username"].ToString());
                                     JObject SpecialIdentifiers = new JObject(
@@ -57,22 +54,11 @@ namespace FoxedItUp {
                                         new JProperty("UserAvatar", HandleRelativePaths(User["image"].ToString()))
                                     );
                                     Log($"* {User["username"]} just {EventType}ed!");
-                                    /*if (EventType == "raid") {
-                                        string RaidCount = Event["details"].ToString();
-                                        RaidCount = RaidCount.Substring(RaidCount.IndexOf('"') + 1);
-                                        RaidCount = RaidCount.Substring(0, RaidCount.IndexOf('"'));
-                                        SpecialIdentifiers.Add(new JProperty("RaidViewerCount", RaidCount));
-                                        if (MixItUpClient.ChannelRaided != null) {
-                                            Log("Running raid command");
-                                            Log(SpecialIdentifiers.ToString());
-                                            MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
-                                        }
-                                    } else { */
-                                        if (MixItUpClient.ChannelFollowed != null) {
-                                            MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
-                                        }
-                                    //}
+                                    if (MixItUpClient.ChannelFollowed != null) {
+                                        MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
+                                    }
                                     break;
+                                case "raid": break; // Raids are handled in the official lib
                                 default:
                                     Log($"Received unsupported event type: {Event["type"]}");
                                     Log(Event.ToString());
@@ -80,7 +66,6 @@ namespace FoxedItUp {
                             }
                         }
                     }
-                    //Log($"Updating LastEvent to {NewEvent}");
                     LastEvent = NewEvent;
                 }
             } catch (Exception ex) {
