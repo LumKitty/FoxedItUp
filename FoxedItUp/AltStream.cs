@@ -1,11 +1,14 @@
 ﻿using AltStreamLib.EventSub;
 using AltStreamLib.EventSub.Chat.Models;
+using AltStreamLib.EventSub.Chat.Models.Events;
+using AltStreamLib.Api.v1.Models;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using static FoxedItUp.Functions;
 using static FoxedItUp._Settings;
+using System.ComponentModel;
 
 namespace FoxedItUp {
     internal static class AltStream {
@@ -15,27 +18,108 @@ namespace FoxedItUp {
         internal static EventSubClient AltEventClient;
         
         internal static void Connect(string _ChannelName) {
-            SetWindowTitle("Connecting");
-            ChannelName = _ChannelName;
-            
-            AltEventClient = new EventSubClient(ChannelName);
-            AltEventClient.OnMessageReceived += AltEventClient_OnMessageReceived;
-            AltEventClient.OnHighlightReceived += AltEventClient_OnHighlightReceived;
-            
-            AltEventClient.OnRaidReceived += AltEventClient_OnRaidReceived;
-            AltEventClient.OnFollowReceived += AltEventClient_OnFollowReceived;
-            AltEventClient.OnRedemptionReceived += AltEventClient_OnRedemptionReceived;
-            AltEventClient.OnUnhandledReceived += AltEventClient_OnUnhandledReceived;
-            
-            AltEventClient.OnConnected += AltEventClient_OnConnected;
-            AltEventClient.OnDisconnected += AltEventClient_OnDisconnected;
+            try {
+                SetWindowTitle("Connecting");
+                ChannelName = _ChannelName;
 
-            Log("Connecting to AltStream");
-            AltEventClient.ConnectAsync();
+                AltEventClient = new EventSubClient(ChannelName);
+                AltEventClient.OnMessageReceived += AltEventClient_OnMessageReceived;
+                AltEventClient.OnHighlightReceived += AltEventClient_OnHighlightReceived;
+
+                AltEventClient.OnRaidReceived += AltEventClient_OnRaidReceived;
+                AltEventClient.OnFollowReceived += AltEventClient_OnFollowReceived;
+                AltEventClient.OnSubscriptionReceived += AltEventClient_OnSubscriptionReceived;
+                AltEventClient.OnTipReceived += AltEventClient_OnTipReceived;
+                AltEventClient.OnRedemptionReceived += AltEventClient_OnRedemptionReceived;
+                AltEventClient.OnUnhandledReceived += AltEventClient_OnUnhandledReceived;
+
+                AltEventClient.OnConnected += AltEventClient_OnConnected;
+                AltEventClient.OnTimeout += AltEventClient_OnTimeout;
+                AltEventClient.OnDisconnected += AltEventClient_OnDisconnected;
+
+                Log("Connecting to AltStream");
+                AltEventClient.ConnectAsync().Wait();
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
+            }
+        }
+
+        private static bool GetBasicUserInfo(string UserName, out string DisplayName, out string AvatarURL, out string UserColor) {
+            UserSettingsResponse UserSettingsInfo = AltAPI.GetUserSettingsInfoAsync(UserName).GetAwaiter().GetResult();
+
+            if (UserSettingsInfo != null) {
+                DisplayName = UserSettingsInfo.Name;
+                AvatarURL = UserSettingsInfo.Image;
+                UserColor = UserSettingsInfo.ChatColor;
+                return false;
+            } else {
+                DisplayName = UserName;
+                AvatarURL = null;
+                UserColor = "#ffffff";
+                return true;
+            }
+        }
+
+        private static void AltEventClient_OnTipReceived(EventMessage obj) {
+            try { 
+                string DisplayName;
+                string AvatarURL;
+                string UserColor;
+
+                Log("Subscription received");
+                KofiEvent DonationEvent = (KofiEvent)obj.Event;
+                GetBasicUserInfo(DonationEvent.Username, out DisplayName, out AvatarURL, out UserColor);
+                Log($"* {DisplayName} ({DonationEvent.Username}) Donated {DonationEvent.Currency}{DonationEvent.Amount} - {DonationEvent.Message}");
+           
+                if (MixItUpClient.ChannelDonation != null) {
+                    MixItUpClient.ChannelDonation.RunCommand(DonationEvent.Message, Settings.SpoofPlatform, DonationEvent.Username, DisplayName, UserColor, AvatarURL, DonationEvent.Currency, DonationEvent.Amount);
+                }
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
+            }
+        }
+
+        private static void AltEventClient_OnSubscriptionReceived(EventMessage obj) {
+            try {
+                string DisplayName;
+                string AvatarURL;
+                string UserColor;
+
+                Log("Subscription received");
+                KofiEvent SubEvent = (KofiEvent)obj.Event;
+                GetBasicUserInfo(SubEvent.Username, out DisplayName, out AvatarURL, out UserColor);
+                Log($"* {DisplayName} ({SubEvent.Username}) subscribed at {SubEvent.TierName}");
+
+                if (SubEvent.IsFirstSubscriptionPayment) {
+                    if (MixItUpClient.ChannelSubscribed != null) {
+                        MixItUpClient.ChannelSubscribed.RunCommand("", Settings.SpoofPlatform, SubEvent.Username, DisplayName, UserColor, AvatarURL, SubEvent.TierName);
+                    }
+                } else {
+                    if (MixItUpClient.ChannelResubscribed != null) {
+                        MixItUpClient.ChannelResubscribed.RunCommand("", Settings.SpoofPlatform, SubEvent.Username, DisplayName, UserColor, AvatarURL, SubEvent.TierName);
+                    }
+                }
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
+            }
         }
 
         private static void AltEventClient_OnFollowReceived(EventMessage obj) {
-            throw new NotImplementedException();
+            try {
+                string DisplayName;
+                string AvatarURL;
+                string UserColor;
+
+                Log("Follow received");
+                GetBasicUserInfo(obj.Context.Author, out DisplayName, out AvatarURL, out UserColor);
+                Log($"* {DisplayName} ({obj.Context.AuthorUsername}) followed");
+
+                if (MixItUpClient.ChannelFollowed != null) {
+                    MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, obj.Context.AuthorUsername, DisplayName, UserColor, AvatarURL);
+                }
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
+            }
         }
 
         private static void AltEventClient_OnUnhandledReceived(EventMessage obj) {
@@ -44,35 +128,40 @@ namespace FoxedItUp {
         }
 
         private static void AltEventClient_OnRedemptionReceived(EventMessage obj) {
-            AltStreamLib.EventSub.Chat.Models.Events.Redemption RedeemEvent = (AltStreamLib.EventSub.Chat.Models.Events.Redemption)obj.Event;
-            Log($"* {RedeemEvent.From} redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
-            string PointsName = RedeemEvent.RewardName.ToLower();
-            Log($"Attempting to run command {PointsName}");
-            MIUCommand PointsCommand = MixItUpClient.MIUChannelPoints.FirstOrDefault(i => (i.Name == PointsName));
-            if (PointsCommand != null) {
-                Log($"Attempting to run command: {PointsCommand.ID}");
-                PointsCommand.RunCommand(RedeemEvent.UserInput, Settings.SpoofPlatform, RedeemEvent.From, RedeemEvent.From, obj.Context.UserColor, obj.Context.AuthorImage);
-            } else {
-                Log("Could not find command");
+            try {
+                AltStreamLib.EventSub.Chat.Models.Events.Redemption RedeemEvent = (AltStreamLib.EventSub.Chat.Models.Events.Redemption)obj.Event;
+                Log($"* {RedeemEvent.From} redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
+                string PointsName = RedeemEvent.RewardName.ToLower();
+                Log($"Attempting to run command {PointsName}");
+                MIURedeemCommand PointsCommand = MixItUpClient.MIUChannelPoints.FirstOrDefault(i => (i.Name == PointsName));
+                if (PointsCommand != null) {
+                    Log($"Attempting to run command: {PointsCommand.ID}");
+                    PointsCommand.RunCommand(RedeemEvent.UserInput, Settings.SpoofPlatform, RedeemEvent.From, obj.Context.Author, obj.Context.UserColor, obj.Context.AuthorImage);
+                } else {
+                    Log("Could not find command");
+                }
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
             }
-
         }
 
         private static void AltEventClient_OnRaidReceived(EventMessage obj) {
-            Log("Raid received");
-            AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming RaidEvent = (AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming)obj.Event;
-            Log($"* {RaidEvent.SourceUsername} raided with {RaidEvent.Viewers}");
+            try {
+                string DisplayName;
+                string AvatarURL;
+                string UserColor;
 
-            JObject SpecialIdentifiers = new JObject(
-                new JProperty("RaidViewerCount", RaidEvent.Viewers.ToString()), // Yes, really! It fails if this is an int
-                new JProperty("UserName", RaidEvent.SourceUsername),
-                new JProperty("UserDisplayName", RaidEvent.SourceUsername),
-                new JProperty("UserAvatar", HandleRelativePaths(obj.Context.AuthorImage)),
-                new JProperty("UserColor", obj.Context.UserColor)
-            );
-            if (!string.IsNullOrEmpty(obj.Context.AuthorImage)) { SpecialIdentifiers.Add(new JProperty("UserAvatar", HandleRelativePaths(obj.Context.AuthorImage))); }
-            if (MixItUpClient.ChannelRaided != null) {
-                MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, RaidEvent.SourceUsername, RaidEvent.SourceUsername, obj.Context.UserColor, obj.Context.AuthorImage, RaidEvent.Viewers);
+                Log("Raid received");
+                AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming RaidEvent = (AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming)obj.Event;
+
+                GetBasicUserInfo(RaidEvent.SourceUsername, out DisplayName, out AvatarURL, out UserColor);
+
+                Log($"* {DisplayName} ({RaidEvent.SourceUsername}) raided with {RaidEvent.Viewers}");
+                if (MixItUpClient.ChannelRaided != null) {
+                    MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, RaidEvent.SourceUsername, DisplayName, UserColor, AvatarURL, RaidEvent.Viewers);
+                }
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
             }
         }
 
@@ -92,12 +181,12 @@ namespace FoxedItUp {
                                 Log($"Invalid message {Context.Text}"); break;
                             case -1:
                                 Command = Context.Text.Substring(1);
-                                Log($"* {Context.AuthorUsername} used command '{Command}'");
+                                Log($"* {Context.Author} ({Context.AuthorUsername}) used command '{Command}'");
                                 break;
                             default:
                                 Command = Context.Text.Substring(1, n - 1);
                                 Args = Context.Text.Substring(n + 1);
-                                Log($"* {Context.AuthorUsername} used command '{Command}' with args: {Args}");
+                                Log($"* {Context.Author} ({Context.AuthorUsername}) used command '{Command}' with args: {Args}");
                                 break;
                         }
 
@@ -105,20 +194,20 @@ namespace FoxedItUp {
                             Log($"Attempting to run command {Command}");
                             MIUChatCommand ChatCommand = MixItUpClient.MIUChatCommands.FirstOrDefault(i => i.TriggerNames.Contains(Command));
                             if (ChatCommand != null) {
-                                Log($"Attempting to run command: {ChatCommand.ID}");
-                                ChatCommand.RunCommand(Args, Settings.SpoofPlatform, Context.AuthorUsername, Context.AuthorUsername, Context.UserColor, Context.AuthorImage);
+                                //Log($"Attempting to run command: {ChatCommand.ID}");
+                                ChatCommand.RunCommand(Args, Settings.SpoofPlatform, Context.AuthorUsername, Context.Author, Context.UserColor, Context.AuthorImage);
                             } else {
                                 Log("Could not find command");
                             }
                         }
                     } else {
-                        Log($"<{Context.AuthorUsername}> {Context.Text}");
+                        Log($"<{Context.Author}> ({Context.AuthorUsername}) {Context.Text}");
                     }
                 } else {
                     Log($"Received empty message: {Context.ToString()}");
                 }
-            } catch (Exception ex) {
-                Log(ex.ToString());
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
             }
         }
         private static void AltEventClient_OnHighlightReceived(EventMessage obj) {
@@ -129,13 +218,29 @@ namespace FoxedItUp {
 
         }
         private static void AltEventClient_OnConnected() {
-            Connected = true;
-            Log($"Connected to channel {ChannelName}");
-            SetWindowTitle("Connected");
+            try {
+                Connected = true;
+                Log($"Connected to channel {ChannelName}");
+                SetWindowTitle("Connected");
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
+            }
         }
         private static void AltEventClient_OnDisconnected() {
-            Connected = false;
-            Log("Disconnected.");
+            try {
+                Connected = false;
+                Log("Connection timed out, reconnecting....");
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
+            }
+        }
+        private static void AltEventClient_OnTimeout() {
+            try {
+                Connected = false;
+                Log("Disconnected and giving up");
+            } catch (Exception Ex) {
+                ErrorHandler(Ex);
+            }
         }
     }
 }

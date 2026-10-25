@@ -22,6 +22,11 @@ namespace FoxedItUp {
         internal static void Log (string Message) {
             Console.WriteLine(Message);
         }
+
+        internal static void ErrorHandler(Exception Ex) {
+            Log($"ERROR: {Ex.ToString()}");
+        }
+
         internal static string HandleRelativePaths(string URL) {
             if (URL.StartsWith("https://") || URL.StartsWith("http://")) {
                 return URL;

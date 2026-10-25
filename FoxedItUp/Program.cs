@@ -54,12 +54,12 @@ updatecommand");
             Settings.BannedCommands = File.ReadAllLines(BanListFile);
             Log($"Banned commands: {Settings.BannedCommands.Count()}");
 
-            MixItUpClient.UpdateMiuCommands();
+            MixItUpClient.UpdateMiuCommands().Wait();
             AltStream.Connect(Settings.ChannelName);
 
             //AltStream_Unofficial.Connect(Settings.ChannelName);
 
-            System.Threading.Thread.Sleep(5000);
+            //System.Threading.Thread.Sleep(5000);
             Log("");
             Log("Press ENTER to exit");
             Console.ReadLine();
