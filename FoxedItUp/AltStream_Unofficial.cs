@@ -13,7 +13,7 @@ using AltStreamLib.EventSub.Chat.Models.Events;
 namespace FoxedItUp {
     internal static class AltStream_Unofficial {
         const int PollTime = 5;
-        static System.Timers.Timer PollTimer = new();
+        static System.Timers.Timer PollTimer = new System.Timers.Timer();
         static string ChannelName;
         static DateTime LastEvent = DateTime.UtcNow;
 
@@ -22,11 +22,11 @@ namespace FoxedItUp {
             PollTimer.AutoReset = true;
             PollTimer.Interval = PollTime * 1000;
             PollTimer.Elapsed += PollTimer_Elapsed;
-            PollTimer_Elapsed(new object(), new System.Timers.ElapsedEventArgs(LastEvent));
+            PollTimer_Elapsed(new object(), null);
             PollTimer.Start();
         }
 
-        private static async void PollTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e) {
+        private static async void PollTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
             try {
                 //Log("Polling for activity");
                 string Result = await HttpRequest("GET", $"https://altstream.online/api/activity?channel={ChannelName}", "");
@@ -55,7 +55,7 @@ namespace FoxedItUp {
                                     );
                                     Log($"* {User["username"]} just {EventType}ed!");
                                     if (MixItUpClient.ChannelFollowed != null) {
-                                        MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
+                                        //MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
                                     }
                                     break;
                                 case "raid": break; // Raids are handled in the official lib

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static FoxedItUp.Functions;
 using AltStreamLib;
+using System.Net.Http;
 
 namespace FoxedItUp {
     internal static class httpRequest {

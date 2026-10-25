@@ -1,35 +1,92 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
+using System.Net.Http;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Threading.Tasks;
 using static FoxedItUp.Functions;
 using static FoxedItUp.httpRequest;
 using static FoxedItUp._Settings;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Web;
+
 
 namespace FoxedItUp {
-    internal class MIUCommand {
+    internal class MIUCommandBase {
         internal string ID;
         internal string Name;
         internal bool Enabled;
         internal bool AllowUser;
 
-        internal void RunCommand(string Arguments, string SpoofPlatform, JObject? SpecialIdentifiers, string RealPlatform) {
+        protected void _RunCommand(string Arguments, string SpoofPlatform, JObject SpecialIdentifiers) {
             JObject Content = new JObject( new JProperty("Platform", SpoofPlatform));
             if (!String.IsNullOrEmpty(Arguments)) { Content.Add(new JProperty("Arguments", Arguments)); }
-            if (SpecialIdentifiers == null) { SpecialIdentifiers = new JObject(); }
-            SpecialIdentifiers.Add(new JProperty("PlatformEx", RealPlatform));
-            Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers));
+            if (SpecialIdentifiers != null) {
+                Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers));
+            }
             HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString());
         }
 
+        internal JObject DefaultSpecialIdentifiers (string UserName, string DisplayName, string UserColor, string UserAvatarURL, string RealPlatform = "AltStream") {
+            JObject SpecialIdentifiers = new JObject(
+                new JProperty("UserName", UserName),
+                new JProperty("UserDisplayName", DisplayName),
+                new JProperty("UserColor", UserColor),
+                new JProperty("UserAvatar", HandleRelativePaths(UserAvatarURL)),
+                new JProperty("PlatformEx", RealPlatform)
+            );
+            return SpecialIdentifiers;
+        }
     }
 
-    internal class MIUChatCommand : MIUCommand {
-        internal List<string> TriggerNames = new();
+    internal class MIUCommand : MIUCommandBase {
+        internal virtual void RunCommand(string Arguments, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+            _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+        }
+    }
+
+    internal class MIUChatCommand : MIUCommandBase {
+        internal List<string> TriggerNames = new List<string>();
+        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+            _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+        }
+        public static implicit operator MIUChatCommand(MIUCommand v) {
+            MIUChatCommand TempRaidCommand = new MIUChatCommand();
+            TempRaidCommand.ID = v.ID;
+            TempRaidCommand.Name = v.Name;
+            TempRaidCommand.Enabled = v.Enabled;
+            TempRaidCommand.AllowUser = v.AllowUser;
+            return TempRaidCommand;
+        }
+    }
+
+    internal class MIURaidCommand : MIUCommandBase {
+        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL, int RaidSize) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+            SpecialIdentifiers.Add(
+                new JProperty("RaidViewerCount", RaidSize.ToString()) // Yes, really! It fails if this is an int)
+            ); 
+            _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+        }
+
+        public static implicit operator MIURaidCommand(MIUCommand v) {
+            MIURaidCommand TempRaidCommand = new MIURaidCommand();
+            TempRaidCommand.ID = v.ID;
+            TempRaidCommand.Name = v.Name;
+            TempRaidCommand.Enabled = v.Enabled;
+            TempRaidCommand.AllowUser = v.AllowUser;
+            return TempRaidCommand;
+        }
+    }
+
+    internal class MUIRedeemCommand : MIUCommand {
+        internal void RunCommand(string RedeemMessage, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL, int RaidSize) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+            SpecialIdentifiers.Add(new JProperty("Message", RedeemMessage));
+            _RunCommand("", SpoofPlatform, SpecialIdentifiers);
+        }
     }
     
     internal static class MixItUpClient {
@@ -37,17 +94,17 @@ namespace FoxedItUp {
         private static HttpClient client = new HttpClient();
         private static JsonSerializerSettings SerialSettings = new JsonSerializerSettings();
 
-        internal static List<MIUChatCommand> MIUChatCommands = new();
-        internal static List<MIUCommand> MIUChannelPoints = new();
-        internal static MIUCommand? ChannelRaided = null;
-        internal static MIUCommand? ChannelFollowed = null;
-        internal static MIUCommand? ChannelSubscribed = null;
-        internal static MIUCommand? ChannelDonation = null;
+        internal static List<MIUChatCommand> MIUChatCommands = new List<MIUChatCommand>();
+        internal static List<MIUCommand> MIUChannelPoints = new List<MIUCommand>();
+        internal static MIURaidCommand ChannelRaided = null;
+        internal static MIUCommand ChannelFollowed = null;
+        internal static MIUCommand ChannelSubscribed = null;
+        internal static MIUCommand ChannelDonation = null;
 
         internal static async Task UpdateMiuCommands() {
             try {
-                List<MIUChatCommand> TempMIUChatCommands = new ();
-                List<MIUCommand> TempMIUChannelPoints = new ();
+                List<MIUChatCommand> TempMIUChatCommands = new List<MIUChatCommand>();
+                List<MIUCommand> TempMIUChannelPoints = new List<MIUCommand>();
                 int skip = 0;
                 int count = 0;
                 do {
@@ -62,7 +119,7 @@ namespace FoxedItUp {
                         //Log(Result.ToString());
                         if (!Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower(), StringComparer.OrdinalIgnoreCase) &&
                           !Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower().Replace(" ",""), StringComparer.OrdinalIgnoreCase)) {
-                            MIUCommand TempCommand = new();
+                            MIUCommand TempCommand = new MIUCommand();
                             TempCommand.Enabled = (bool)Result["IsEnabled"];
                             TempCommand.ID = (string)Result["ID"];
                             TempCommand.Name = ((string)Result["Name"]).ToLower();
@@ -70,10 +127,7 @@ namespace FoxedItUp {
                                 switch (((string)Result["Type"]).ToLower()) {
                                     case "chat":
                                     case "pre-made":
-                                        MIUChatCommand TempChatCommand = new();
-                                        TempChatCommand.Enabled = TempCommand.Enabled;
-                                        TempChatCommand.ID = TempCommand.ID;
-                                        TempChatCommand.Name = TempCommand.Name;
+                                        MIUChatCommand TempChatCommand = TempCommand;
                                         TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
                                         TempMIUChatCommands.Add(TempChatCommand);
                                         Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)})");
@@ -86,26 +140,28 @@ namespace FoxedItUp {
                                         }
                                         break;
                                     case "kick channel points":
-                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                        if (Settings.ParseChannelPointsFromKick) {
                                             TempMIUChannelPoints.Add(TempCommand);
                                             Log($"Added kick redeem: {TempCommand.Name}");
                                         }
                                         break;
                                     case "velora channel points":
-                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                        if (Settings.ParseChannelPointsFromVelora) {
                                             TempMIUChannelPoints.Add(TempCommand);
                                             Log($"Added velora redeem: {TempCommand.Name}");
                                         }
                                         break;
                                     case "vpzone channel points":
-                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                        if (Settings.ParseChannelPointsFromVPZone) {
                                             TempMIUChannelPoints.Add(TempCommand);
                                             Log($"Added vpzone redeem: {TempCommand.Name}");
                                         }
                                         break;
                                     case "event":
                                         switch (((string)Result["Name"]).ToLower()) {
-                                            case "channel raided": ChannelRaided = TempCommand; Log("Added channel raided event"); break;
+                                            case "channel raided": 
+                                                ChannelRaided = TempCommand; Log("Added channel raided event");
+                                                break;
                                             case "channel followed": ChannelFollowed = TempCommand; Log("Added channel followed event"); break;
                                             case "channel subscribed": ChannelSubscribed = TempCommand; Log("Added channel subscribed event"); break;
                                             case "generic donation": ChannelDonation = TempCommand; Log("Added channel donated event"); break;

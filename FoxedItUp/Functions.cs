@@ -1,13 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
+using static FoxedItUp._Settings;
 
 namespace FoxedItUp {
     internal static class Functions {
-        internal const string WindowTitle = "FoxedItUp v0.2.6";
-        
+        internal static System.Version version = Assembly.GetExecutingAssembly().GetName().Version;
+        private static readonly string WindowTitle = $"FoxedItUp {version}"; 
+        private static AltStreamLib.Logging.Logger logger = new AltStreamLib.Logging.Logger();
+
+        internal static void AltStreamLibLogInit() {
+            logger.OnLog += Logger_OnLog;
+        }
+
+        private static void Logger_OnLog(LogMessage obj) {
+            if (!Settings.ShowAltStreamLibPingMessages && obj.Message == "PING") { return; }
+            Log($"AltStreamLib: {obj.Message}");
+        }
+
         internal static void Log (string Message) {
             Console.WriteLine(Message);
         }

@@ -2,18 +2,21 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>net481</TargetFramework>
+    <StartupObject>FoxedItUp.FoxedItUp</StartupObject>
+    <Version />
+    <!-- <Title>0.2.7</Title> -->
+    <VersionPrefix>0.2.7</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Newtonsoft.Json" Version="14.0.1-beta2" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="AltStreamLib">
-      <HintPath>..\..\Libs\AltStreamLib-v0.3.0-net9.0\AltStreamLib.dll</HintPath>
+      <HintPath>..\..\Libs\AltStreamLib v0.3.11b-Net46\AltStreamLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 

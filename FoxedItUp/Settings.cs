@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,19 +16,24 @@ namespace FoxedItUp {
         public bool ParseChannelPointsFromVelora = false;
         public bool ParseChannelPointsFromVPZone = false;
         public string SpoofPlatform = "Twitch";
-        public bool EnableOutdatedWorkaround = false;
-        [JsonIgnore] public string[] BannedCommands = [];
+        public bool ShowAltStreamLibMessages = false;
+        public bool ShowAltStreamLibPingMessages = false;
+        public bool ShowAltStreamChatMessages = true;
+        public bool ShowAltStreamChatCommands = true;
+        public bool ShowAltStreamRedeems = true;
+        public bool ShowAltStreamEvents = true;
+        [JsonIgnore] public string[] BannedCommands = new string[0];
     }
     
     internal static class _Settings {
-        internal static __Settings Settings = new();
+        internal static __Settings Settings = new __Settings();
     }
 
     internal static class SettingsFile {
         internal static bool Load(string FileName) {
             if (File.Exists(FileName)) {
                 Log($"Loading {FileName}");
-                __Settings? TempSettings = JsonConvert.DeserializeObject<__Settings>(File.ReadAllText(FileName));
+                __Settings TempSettings = JsonConvert.DeserializeObject<__Settings>(File.ReadAllText(FileName));
                 if (TempSettings != null) {
                     _Settings.Settings = TempSettings;
                     return true;
