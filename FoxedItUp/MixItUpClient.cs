@@ -1,14 +1,16 @@
-﻿using System;
+﻿using AltStreamLib.Api.v1.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
+using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Web;
+using static FoxedItUp._Settings;
 using static FoxedItUp.Functions;
 using static FoxedItUp.httpRequest;
-using static FoxedItUp._Settings;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Web;
 
 
 namespace FoxedItUp {
@@ -27,21 +29,47 @@ namespace FoxedItUp {
             HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString()).Wait();
         }
 
-        internal JObject DefaultSpecialIdentifiers (string UserName, string DisplayName, string UserColor, string UserAvatarURL, string RealPlatform = "AltStream") {
-            JObject SpecialIdentifiers = new JObject(
-                new JProperty("UserName", UserName),
-                new JProperty("UserDisplayName", DisplayName),
-                new JProperty("UserColor", UserColor),
-                new JProperty("UserAvatar", HandleRelativePaths(UserAvatarURL)),
-                new JProperty("PlatformEx", RealPlatform)
-            );
+        internal JObject DefaultSpecialIdentifiers (string UserName, string RealPlatform = "AltStream") {
+            JObject SpecialIdentifiers = null;
+            if (RealPlatform == "AltStream") {
+                AltStreamUserInfo User = AltStream.GetBasicUserInfo(UserName);
+                TimeSpan FollowAge;
+                if (User.FollowedAt != null) {
+                    FollowAge = DateTime.UtcNow - User.FollowedAt;
+                } else {
+                    FollowAge = new TimeSpan(0);
+                }
+
+                SpecialIdentifiers = new JObject(
+                    new JProperty("UserName", UserName),
+                    new JProperty("UserDisplayName", User.UserInfo.Name),
+                    new JProperty("UserColor", User.UserInfo.ChatColor),
+                    new JProperty("UserAvatar", HandleRelativePaths(User.UserInfo.Image)),
+                    new JProperty("UserURL", $"https://altstream.online/{UserName}"),
+                    new JProperty("UserIsSubscriber", User.UserInfo.IsSubscriber.ToString()), //Yes, really
+                    new JProperty("UserIsFollower", (!String.IsNullOrEmpty(User.UserInfo.FollowedAt)).ToString()),
+                    new JProperty("UserFollowAge", FollowAge.ToString()),
+                    new JProperty("UserFollowDays", ((int)Math.Floor(FollowAge.TotalDays)).ToString()),
+                    new JProperty("PlatformEx", RealPlatform)
+                );
+                
+
+                if (User.ChannelInfo != null) {
+                    SpecialIdentifiers.Add(new JProperty("UserStreamGame", User.ChannelInfo.Stream.Game.Name));
+                    SpecialIdentifiers.Add(new JProperty("UserStreamGameName", User.ChannelInfo.Stream.Game.Name));
+                    SpecialIdentifiers.Add(new JProperty("UserStreamTitle", User.ChannelInfo.Stream.Title));
+                    SpecialIdentifiers.Add(new JProperty("UserStreamIsLive", User.ChannelInfo.Stream.IsLive.ToString()));
+                    SpecialIdentifiers.Add(new JProperty("UserStreamGameImage", User.ChannelInfo.Stream.Game.CoverUrl));
+                }
+            }
+
             return SpecialIdentifiers;
         }
     }
 
     internal class MIUCommand : MIUCommandBase {
-        internal virtual void RunCommand(string Arguments, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+        internal virtual void RunCommand(string Arguments, string SpoofPlatform, string UserName) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
         }
         internal MIUCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
@@ -49,16 +77,16 @@ namespace FoxedItUp {
 
     internal class MIUChatCommand : MIUCommandBase {
         internal List<string> TriggerNames = new List<string>();
-        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
         }
         internal MIUChatCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }
 
     internal class MIURaidCommand : MIUCommandBase {
-        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL, int RaidSize) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName, int RaidSize) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(
                 new JProperty("RaidViewerCount", RaidSize.ToString()) // Yes, really! It fails if this is an int)
             ); 
@@ -68,8 +96,8 @@ namespace FoxedItUp {
     }
 
     internal class MIURedeemCommand : MIUCommandBase {
-        internal void RunCommand(string RedeemMessage, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+        internal void RunCommand(string RedeemMessage, string SpoofPlatform, string UserName) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(new JProperty("Message", RedeemMessage));
             _RunCommand("", SpoofPlatform, SpecialIdentifiers);
         }
@@ -77,8 +105,8 @@ namespace FoxedItUp {
     }
 
     internal class MIUSubscriptionCommand : MIUCommandBase {
-        internal void RunCommand(string SubscriptionMessage, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL, string Tier) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+        internal void RunCommand(string SubscriptionMessage, string SpoofPlatform, string UserName, string Tier) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(new JProperty("Message", SubscriptionMessage));
             SpecialIdentifiers.Add(new JProperty("UserSubPlan", Tier));
             _RunCommand("", SpoofPlatform, SpecialIdentifiers);
@@ -87,8 +115,8 @@ namespace FoxedItUp {
     }
 
     internal class MIUDonationCommand : MIUCommandBase {
-        internal void RunCommand(string DonationMessage, string SpoofPlatform, string UserName, string DisplayName, string UserColor, string UserAvatarURL, string Currency, string Amount) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName, DisplayName, UserColor, UserAvatarURL);
+        internal void RunCommand(string DonationMessage, string SpoofPlatform, string UserName, string Currency, string Amount) {
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(new JProperty("DonationMessage", DonationMessage));
             SpecialIdentifiers.Add(new JProperty("DonationCurrency", Currency));
             SpecialIdentifiers.Add(new JProperty("DonationAmount", Currency + Amount));

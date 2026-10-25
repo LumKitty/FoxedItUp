@@ -22,6 +22,7 @@ namespace FoxedItUp {
         public bool ShowAltStreamChatCommands = true;
         public bool ShowAltStreamRedeems = true;
         public bool ShowAltStreamEvents = true;
+        public bool ShowMIURawCommands = false;
         [JsonIgnore] public string[] BannedCommands = new string[0];
     }
     

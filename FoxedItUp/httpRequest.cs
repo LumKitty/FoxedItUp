@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using static FoxedItUp.Functions;
 using AltStreamLib;
 using System.Net.Http;
+using static FoxedItUp._Settings;
 
 namespace FoxedItUp {
     internal static class httpRequest {
@@ -19,7 +20,7 @@ namespace FoxedItUp {
 
                 switch (Method) {
                     case "POST":
-                        //Log("POST: " + URL + " : " + Content);
+                        if (Settings.ShowMIURawCommands) { Log("POST: " + URL + " : " + Content); }
                         var PostResult = await client.PostAsync(URL, jsonData);
                         Response = PostResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)PostResult.StatusCode);
@@ -27,21 +28,21 @@ namespace FoxedItUp {
                         PostResult.Dispose();
                         break;
                     case "PUT":
-                        //Log("PUT: " + URL + " : " + Content);
+                        if (Settings.ShowMIURawCommands) { Log("PUT: " + URL + " : " + Content); }
                         var PutResult = await client.PutAsync(URL, jsonData);
                         Response = PutResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)PutResult.StatusCode);
                         PutResult.Dispose();
                         break;
                     case "GET":
-                        //Log("GET: " + URL + " : " + Content);
+                        if (Settings.ShowMIURawCommands) { Log("GET: " + URL + " : " + Content); }
                         var GetResult = await client.GetAsync(URL);
                         Response = GetResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)GetResult.StatusCode);
                         GetResult.Dispose();
                         break;
                     case "PATCH":
-                        Log("PATCH: " + URL + " : " + Content);
+                        if (Settings.ShowMIURawCommands) { Log("PATCH: " + URL + " : " + Content); }
                         var request = new HttpRequestMessage(new HttpMethod("PATCH"), URL);
                         request.Content = jsonData;
                         var PatchResult = await client.SendAsync(request);
@@ -50,7 +51,7 @@ namespace FoxedItUp {
                         PatchResult.Dispose();
                         break;
                 }
-                //Log("HTTP status: " + httpStatus + " - Response: " + Response);
+                if (Settings.ShowMIURawCommands) { Log("HTTP status: " + httpStatus + " - Response: " + Response); }
 
 
                 return Response;
