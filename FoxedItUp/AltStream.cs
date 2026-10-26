@@ -102,9 +102,9 @@ namespace FoxedItUp {
                     //User.FollowedAt = Newtonsoft.Json.JsonConvert.DeserializeObject<DateTime>(User.UserInfo.FollowedAt);
                 }
                 if (User.UserInfo.CreatedAt != null) {
-                    Log($"User created at raw: {User.UserInfo.CreatedAt}");
+                    //Log($"User created at raw: {User.UserInfo.CreatedAt}");
                     User.CreatedAt = DateTime.Parse(User.UserInfo.CreatedAt);
-                    Log($"User created at parsed: {User.CreatedAt.ToString()}");
+                    //Log($"User created at parsed: {User.CreatedAt.ToString()}");
                 } 
                 return User;
             }
