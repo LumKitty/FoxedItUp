@@ -28,10 +28,14 @@ namespace FoxedItUp {
         }
 
         internal static string HandleRelativePaths(string URL) {
-            if (URL.StartsWith("https://") || URL.StartsWith("http://")) {
-                return URL;
+            if (!String.IsNullOrEmpty(URL)) {
+                if (URL.StartsWith("https://") || URL.StartsWith("http://")) {
+                    return URL;
+                } else {
+                    return $"https://altstream.online{URL}";
+                }
             } else {
-                return $"https://altstream.online{URL}";
+                return "https://altstream.online/logo_ashe_big.gif";
             }
         }
         internal static void SetWindowTitle(string msg) {

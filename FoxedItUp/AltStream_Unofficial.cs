@@ -43,21 +43,44 @@ namespace FoxedItUp {
                         if (TimeStamp > LastEvent) {
                             if (TimeStamp > NewEvent) { NewEvent = TimeStamp; }
                             string EventType = Event["type"].ToString().ToLower();
+                            JObject User;
                             switch (EventType) { 
                                 case "follow":
-                                    JObject User = (JObject)Event["user"];
-                                    AltStreamLib.Api.v1.Models.UserSettingsResponse UserInfo = await AltStream.AltAPI.GetUserSettingsInfoAsync(User["username"].ToString());
-                                    JObject SpecialIdentifiers = new JObject(
-                                        new JProperty("UserName", User["username"].ToString()),
-                                        new JProperty("UserDisplayName", User["name"].ToString()),
-                                        new JProperty("UserColor", "#ffffff"),
-                                        new JProperty("UserAvatar", HandleRelativePaths(User["image"].ToString()))
-                                    );
-                                    Log($"* {User["username"]} just {EventType}ed!");
+                                    User = (JObject)Event["user"];
+                                   
+                                    Log($"* {User["username"]} just followed!");
                                     if (MixItUpClient.ChannelFollowed != null) {
-                                        //MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, SpecialIdentifiers, "altstream");
+                                        await MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, User["username"].ToString());
                                     }
                                     break;
+
+                                case "subscription":
+                                    User = (JObject)Event["user"];
+
+                                    Log($"* {User["username"]} just subscribed!");
+                                    if (MixItUpClient.ChannelFollowed != null) {  //  vvv Need to see a real one to do this properly vvv
+                                        await MixItUpClient.ChannelSubscribed.RunCommand(Event["details"].ToString(), Settings.SpoofPlatform, User["username"].ToString(), ""); 
+                                    }
+                                    break;
+
+                                case "tip":
+                                    User = (JObject)Event["user"];
+
+                                    Log($"* {User["username"]} just tipped!");
+                                    if (MixItUpClient.ChannelFollowed != null) {  //  vvv Need to see a real one to do this properly vvv
+                                        string Details = Event["details"].ToString();
+                                        Details = Details.Substring(Details.IndexOf(' ') + 1);
+                                        string CurrencySymbol = Details.Substring(0, 1);
+                                        string Amount = Details.Substring(1, Details.IndexOf(' ') - 1);
+                                        Log(Details);
+                                        Details = Details.Substring(Details.IndexOf('"') + 1);
+                                        Log(Details);
+                                        string Message = Details.Substring(0, Details.IndexOf('"'));
+
+                                        await MixItUpClient.ChannelDonation.RunCommand(Message, Settings.SpoofPlatform, User["username"].ToString(), CurrencySymbol, Amount);
+                                    }
+                                    break;
+
                                 case "raid": break; // Raids are handled in the official lib
                                 default:
                                     Log($"Received unsupported event type: {Event["type"]}");

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Web;
 using static FoxedItUp._Settings;
@@ -20,46 +21,116 @@ namespace FoxedItUp {
         internal bool Enabled;
         internal bool AllowUser;
 
-        protected void _RunCommand(string Arguments, string SpoofPlatform, JObject SpecialIdentifiers) {
+        protected async Task _RunCommand(string Arguments, string SpoofPlatform, JObject SpecialIdentifiers) {
             JObject Content = new JObject( new JProperty("Platform", SpoofPlatform));
             if (!String.IsNullOrEmpty(Arguments)) { Content.Add(new JProperty("Arguments", Arguments)); }
             if (SpecialIdentifiers != null) {
                 Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers));
             }
-            HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString()).Wait();
+            await HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString());
         }
 
-        internal JObject DefaultSpecialIdentifiers (string UserName, string RealPlatform = "AltStream") {
+        internal JObject DefaultSpecialIdentifiers (string UserName, string Prefix = "", string RealPlatform = "AltStream") {
             JObject SpecialIdentifiers = null;
             if (RealPlatform == "AltStream") {
                 AltStreamUserInfo User = AltStream.GetBasicUserInfo(UserName);
-                TimeSpan FollowAge;
-                if (User.FollowedAt != null) {
+                //TimeSpan FollowAge;
+                TimeSpan AccountAge;
+                /*if (User.FollowedAt != null) {
                     FollowAge = DateTime.UtcNow - User.FollowedAt;
                 } else {
                     FollowAge = new TimeSpan(0);
+                }*/
+                if (User.CreatedAt != null) {
+                    AccountAge = DateTime.UtcNow - User.CreatedAt;
+                } else {
+                    AccountAge = new TimeSpan(0);
                 }
 
-                SpecialIdentifiers = new JObject(
-                    new JProperty("UserName", UserName),
-                    new JProperty("UserDisplayName", User.UserInfo.Name),
-                    new JProperty("UserColor", User.UserInfo.ChatColor),
-                    new JProperty("UserAvatar", HandleRelativePaths(User.UserInfo.Image)),
-                    new JProperty("UserURL", $"https://altstream.online/{UserName}"),
-                    new JProperty("UserIsSubscriber", User.UserInfo.IsSubscriber.ToString()), //Yes, really
-                    new JProperty("UserIsFollower", (!String.IsNullOrEmpty(User.UserInfo.FollowedAt)).ToString()),
-                    new JProperty("UserFollowAge", FollowAge.ToString()),
-                    new JProperty("UserFollowDays", ((int)Math.Floor(FollowAge.TotalDays)).ToString()),
-                    new JProperty("PlatformEx", RealPlatform)
-                );
-                
+                List<string> Roles = new List<string>();
+                //if (User.IsFollower) { Roles.Add("Follower"); }
+                if (User.IsSubscriber) { Roles.Add("Subscriber"); }
+                if (User.IsModerator) { Roles.Add("Moderator"); }
 
-                if (User.ChannelInfo != null) {
-                    SpecialIdentifiers.Add(new JProperty("UserStreamGame", User.ChannelInfo.Stream.Game.Name));
-                    SpecialIdentifiers.Add(new JProperty("UserStreamGameName", User.ChannelInfo.Stream.Game.Name));
+                SpecialIdentifiers = new JObject(
+                    new JProperty($"{Prefix}UserName", UserName),
+                    new JProperty($"{Prefix}UserDisplayName", User.UserInfo.Name),
+                    new JProperty($"{Prefix}UserColor", User.UserInfo.ChatColor),
+                    new JProperty($"{Prefix}User{Settings.SpoofPlatform}Color", User.UserInfo.ChatColor),
+                    new JProperty($"{Prefix}UserAvatar", HandleRelativePaths(User.UserInfo.Image)),
+                    new JProperty($"{Prefix}UserURL", $"https://altstream.online/{UserName}"),
+                    new JProperty($"{Prefix}UserIsSubscriber", User.IsSubscriber.ToString()), //Yes, really
+                    //new JProperty($"{Prefix}UserIsFollower", User.IsFollower.ToString()),
+                    new JProperty($"{Prefix}UserIsMod", User.IsModerator.ToString()),
+                    new JProperty($"{Prefix}UserRoles", String.Join(", ", Roles)),
+                    //new JProperty($"{Prefix}UserFollowAge", FollowAge.ToString()),
+                    //new JProperty($"{Prefix}UserFollowDays", ((int)Math.Floor(FollowAge.TotalDays)).ToString()),
+                    new JProperty($"{Prefix}UserAccountAge", AccountAge.ToString()),
+                    new JProperty($"{Prefix}UserAccountAgeDays", ((int)Math.Floor(AccountAge.TotalDays)).ToString()),
+                    new JProperty($"{Prefix}PlatformEx", RealPlatform),
+                    new JProperty($"{Prefix}UserAlejoPronouns", User.UserInfo.Pronouns)
+                );
+
+                /* Special identifiers not supported:
+                 * UserID           - MIU-specific, can't guarantee it even exists!
+                 * UserDisplayRoles - Beyond my scope to translate into every language
+                 * UserTitle        - MIU-specific. Could do in future
+                 * UserTime         - MIU-specific. Not tracking altstream presence so can't really do
+                 * UserHours
+                 * UserMinutes
+                 * UserLastSeenAge  - Not tracking users between sessions
+                 * UserLastSeenPrecise
+                 * UserFollowAge    - Broken in upstream API
+                 * UserFollowDays
+                 * UserFollowMonths - Possible (once age is fixed) but pain in the arse to implement. Maybe in future
+                 * UserFollowYears
+                 * UserSubAge       - We don't have this info in AltStream
+                 * UserSubMonths
+                 * UserSubTier      - I don't think this exists on AltStream?
+                 * UserSubBadge     - Maybe possible need to check API
+                 * UserInChat       - Not tracking users
+                 * UserIsFollower   - Broken in upstream API
+                 * UserIsRegular    - Not tracking users
+                 * UserIsVIP        - I don't think this exists either
+                 * UserIsSpecialityExcluded - MIU-specific
+                 * UserBitsLifeTimeAmount - Not tracking users
+                 * UserTotalStreamsWatched
+                 * UserTotalAmountDonated
+                 * UserTotalSubsGifted
+                 * UserTotalSubsReceived
+                 * UserTotalChatMessagesSent
+                 * UserTotalTimesTagged
+                 * UserTotalCommandsRun
+                 * UserTotalMonthsSubbed
+                 * UserModerationStrikes
+                 * UserGameQueuePosition
+                 * UserPatreonTier
+                 * UserNotes
+                 * 
+                 * All TargetUser identifiers, until I figure out how I want to handle this
+                */
+
+                if (UserName.ToLower() == User.UserInfo.Name.ToLower()) {
+                    SpecialIdentifiers.Add(new JProperty("UserFullDisplayName", User.UserInfo.Name));
+                } else {
+                    SpecialIdentifiers.Add(new JProperty("UserFullDisplayName", $"{User.UserInfo.Name} ({UserName})"));
+                }
+                if (User.IsModerator) {
+                    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Moderator"));
+                } else if (User.IsSubscriber) {
+                    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Subscriber"));
+                //} else if (User.IsFollower) {
+                //    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Follower"));
+                }
+
+                if (User.ChannelInfo != null && User.ChannelInfo.Stream != null) {
                     SpecialIdentifiers.Add(new JProperty("UserStreamTitle", User.ChannelInfo.Stream.Title));
                     SpecialIdentifiers.Add(new JProperty("UserStreamIsLive", User.ChannelInfo.Stream.IsLive.ToString()));
-                    SpecialIdentifiers.Add(new JProperty("UserStreamGameImage", User.ChannelInfo.Stream.Game.CoverUrl));
+                    if (User.ChannelInfo.Stream.Game != null) {
+                        SpecialIdentifiers.Add(new JProperty("UserStreamGame", User.ChannelInfo.Stream.Game.Name));
+                        SpecialIdentifiers.Add(new JProperty("UserStreamGameName", User.ChannelInfo.Stream.Game.Name));
+                        SpecialIdentifiers.Add(new JProperty("UserStreamGameImage", User.ChannelInfo.Stream.Game.CoverUrl));
+                    }
                 }
             }
 
@@ -68,61 +139,61 @@ namespace FoxedItUp {
     }
 
     internal class MIUCommand : MIUCommandBase {
-        internal virtual void RunCommand(string Arguments, string SpoofPlatform, string UserName) {
+        internal virtual async Task RunCommand(string Arguments, string SpoofPlatform, string UserName) {
             JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
-            _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+            await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
         }
         internal MIUCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }
 
     internal class MIUChatCommand : MIUCommandBase {
         internal List<string> TriggerNames = new List<string>();
-        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName) {
+        internal async Task RunCommand(string Arguments, string SpoofPlatform, string UserName) {
             JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
-            _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+            await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
         }
         internal MIUChatCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }
 
     internal class MIURaidCommand : MIUCommandBase {
-        internal void RunCommand(string Arguments, string SpoofPlatform, string UserName, int RaidSize) {
+        internal async Task RunCommand(string Arguments, string SpoofPlatform, string UserName, int RaidSize) {
             JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(
                 new JProperty("RaidViewerCount", RaidSize.ToString()) // Yes, really! It fails if this is an int)
             ); 
-            _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+            await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
         }
         internal MIURaidCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }
 
     internal class MIURedeemCommand : MIUCommandBase {
-        internal void RunCommand(string RedeemMessage, string SpoofPlatform, string UserName) {
+        internal async Task RunCommand(string RedeemMessage, string SpoofPlatform, string UserName) {
             JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(new JProperty("Message", RedeemMessage));
-            _RunCommand("", SpoofPlatform, SpecialIdentifiers);
+            await _RunCommand("", SpoofPlatform, SpecialIdentifiers);
         }
         internal MIURedeemCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }
 
     internal class MIUSubscriptionCommand : MIUCommandBase {
-        internal void RunCommand(string SubscriptionMessage, string SpoofPlatform, string UserName, string Tier) {
+        internal async Task RunCommand(string SubscriptionMessage, string SpoofPlatform, string UserName, string Tier) {
             JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(new JProperty("Message", SubscriptionMessage));
             SpecialIdentifiers.Add(new JProperty("UserSubPlan", Tier));
-            _RunCommand("", SpoofPlatform, SpecialIdentifiers);
+            await _RunCommand("", SpoofPlatform, SpecialIdentifiers);
         }
         internal MIUSubscriptionCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }
 
     internal class MIUDonationCommand : MIUCommandBase {
-        internal void RunCommand(string DonationMessage, string SpoofPlatform, string UserName, string Currency, string Amount) {
+        internal async Task RunCommand(string DonationMessage, string SpoofPlatform, string UserName, string Currency, string Amount) {
             JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             SpecialIdentifiers.Add(new JProperty("DonationMessage", DonationMessage));
             SpecialIdentifiers.Add(new JProperty("DonationCurrency", Currency));
             SpecialIdentifiers.Add(new JProperty("DonationAmount", Currency + Amount));
             SpecialIdentifiers.Add(new JProperty("DonationAmountNumber", Amount));
             SpecialIdentifiers.Add(new JProperty("DonationAmountNumberDigits", new string(Amount.Where(c => char.IsDigit(c)).ToArray())));
-            _RunCommand("", SpoofPlatform, SpecialIdentifiers);
+            await _RunCommand("", SpoofPlatform, SpecialIdentifiers);
         }
         internal MIUDonationCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }

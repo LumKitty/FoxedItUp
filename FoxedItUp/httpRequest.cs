@@ -53,7 +53,6 @@ namespace FoxedItUp {
                 }
                 if (Settings.ShowMIURawCommands) { Log("HTTP status: " + httpStatus + " - Response: " + Response); }
 
-
                 return Response;
             } catch (Exception e) {
                 Log(e.ToString());

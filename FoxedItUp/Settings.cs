@@ -16,6 +16,7 @@ namespace FoxedItUp {
         public bool ParseChannelPointsFromVelora = false;
         public bool ParseChannelPointsFromVPZone = false;
         public string SpoofPlatform = "Twitch";
+        public bool EnableUnofficialEvents = false;
         public bool ShowAltStreamLibMessages = false;
         public bool ShowAltStreamLibPingMessages = false;
         public bool ShowAltStreamChatMessages = true;

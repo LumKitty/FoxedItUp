@@ -17,10 +17,9 @@ namespace FoxedItUp {
 
             SetWindowTitle("init");
 
-            if (!SettingsFile.Load(JsonFile)) {
-                SettingsFile.Save(JsonFile);
-            }
-
+            SettingsFile.Load(JsonFile);
+            SettingsFile.Save(JsonFile);
+            
             if (!File.Exists(BanListFile)) {
                 Log("");
                 Log($"BanList file not found. Creating {BanListFile}");
@@ -55,11 +54,15 @@ updatecommand");
             Log($"Banned commands: {Settings.BannedCommands.Count()}");
 
             MixItUpClient.UpdateMiuCommands().Wait();
+            AltStream.UpdateModerators(Settings.ChannelName).Wait();
             AltStream.Connect(Settings.ChannelName);
+            
 
-            //AltStream_Unofficial.Connect(Settings.ChannelName);
+            if (Settings.EnableUnofficialEvents) {
+                Log($"Unofficial events enabled. Polling for Follows");
+                AltStream_Unofficial.Connect(Settings.ChannelName);
+            }
 
-            //System.Threading.Thread.Sleep(5000);
             Log("");
             Log("Press ENTER to exit");
             Console.ReadLine();
