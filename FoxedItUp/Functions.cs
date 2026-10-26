@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using NodaTime;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -40,6 +42,32 @@ namespace FoxedItUp {
         }
         internal static void SetWindowTitle(string msg) {
             Console.Title = $"{WindowTitle} - {msg}";
+        }
+
+        internal static LocalDateTime FromDateTimeUtc(DateTime datetime) {
+            return new LocalDateTime(
+                datetime.Year,
+                datetime.Month,
+                datetime.Day,
+                datetime.Hour,
+                datetime.Minute,
+                datetime.Second,
+                datetime.Millisecond
+            );
+        }
+
+        internal static string DateTimeToAge(DateTime datetime) {
+            Period Between = Period.Between(FromDateTimeUtc(datetime), FromDateTimeUtc(DateTime.UtcNow));
+            string Result = Between.Years.ToString();
+            if (Between.Years != 1) { Result += " Years "; } else { Result += " Year "; }
+            Result += Between.Months.ToString();
+            if (Between.Months != 1) { Result += " Months "; } else { Result += " Month "; }
+            Result += Between.Days.ToString();
+            if (Between.Days != 1) { Result += " Days"; } else { Result += " Day"; }
+            return Result;
+        }
+        internal static int DateTimeToDays(DateTime datetime) {
+            return (int)Math.Floor((DateTime.UtcNow - datetime).TotalDays);
         }
     }
 }

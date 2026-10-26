@@ -1,17 +1,18 @@
-﻿using AltStreamLib.EventSub;
+﻿using AltStreamLib.Api.Chat.Models;
+using AltStreamLib.Api.v1.Models;
+using AltStreamLib.EventSub;
 using AltStreamLib.EventSub.Chat.Models;
 using AltStreamLib.EventSub.Chat.Models.Events;
-using AltStreamLib.Api.v1.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
-using System.Threading.Tasks;
-using static FoxedItUp.Functions;
-using static FoxedItUp._Settings;
-using System.ComponentModel;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using AltStreamLib.Api.Chat.Models;
+using System.Threading.Tasks;
+using static FoxedItUp._Settings;
+using static FoxedItUp.Functions;
 
 namespace FoxedItUp {
     internal class AltStreamUserInfo {
@@ -89,6 +90,8 @@ namespace FoxedItUp {
                 User.ChannelInfo = Temp.Data;
             }
 
+            //Log(JsonConvert.SerializeObject(User.UserInfo, Formatting.Indented));
+
             if (Moderators.Contains(UserName.ToLower())) { User.IsModerator = true; }
             User.IsSubscriber = User.UserInfo.IsSubscriber;
             //User.IsFollower = !String.IsNullOrEmpty(User.UserInfo.FollowedAt);
@@ -99,7 +102,9 @@ namespace FoxedItUp {
                     //User.FollowedAt = Newtonsoft.Json.JsonConvert.DeserializeObject<DateTime>(User.UserInfo.FollowedAt);
                 }
                 if (User.UserInfo.CreatedAt != null) {
-                    User.CreatedAt = Newtonsoft.Json.JsonConvert.DeserializeObject<DateTime>(User.UserInfo.CreatedAt);
+                    Log($"User created at raw: {User.UserInfo.CreatedAt}");
+                    User.CreatedAt = DateTime.Parse(User.UserInfo.CreatedAt);
+                    Log($"User created at parsed: {User.CreatedAt.ToString()}");
                 } 
                 return User;
             }

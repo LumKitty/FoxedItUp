@@ -1,6 +1,7 @@
 ﻿using AltStreamLib.Api.v1.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NodaTime;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -35,17 +36,6 @@ namespace FoxedItUp {
             if (RealPlatform == "AltStream") {
                 AltStreamUserInfo User = AltStream.GetBasicUserInfo(UserName);
                 //TimeSpan FollowAge;
-                TimeSpan AccountAge;
-                /*if (User.FollowedAt != null) {
-                    FollowAge = DateTime.UtcNow - User.FollowedAt;
-                } else {
-                    FollowAge = new TimeSpan(0);
-                }*/
-                if (User.CreatedAt != null) {
-                    AccountAge = DateTime.UtcNow - User.CreatedAt;
-                } else {
-                    AccountAge = new TimeSpan(0);
-                }
 
                 List<string> Roles = new List<string>();
                 //if (User.IsFollower) { Roles.Add("Follower"); }
@@ -65,8 +55,8 @@ namespace FoxedItUp {
                     new JProperty($"{Prefix}UserRoles", String.Join(", ", Roles)),
                     //new JProperty($"{Prefix}UserFollowAge", FollowAge.ToString()),
                     //new JProperty($"{Prefix}UserFollowDays", ((int)Math.Floor(FollowAge.TotalDays)).ToString()),
-                    new JProperty($"{Prefix}UserAccountAge", AccountAge.ToString()),
-                    new JProperty($"{Prefix}UserAccountAgeDays", ((int)Math.Floor(AccountAge.TotalDays)).ToString()),
+                    new JProperty($"{Prefix}UserAccountAge", DateTimeToAge(User.CreatedAt)),
+                    new JProperty($"{Prefix}UserAccountAgeDays", DateTimeToDays(User.CreatedAt).ToString()),
                     new JProperty($"{Prefix}PlatformEx", RealPlatform),
                     new JProperty($"{Prefix}UserAlejoPronouns", User.UserInfo.Pronouns)
                 );
