@@ -20,11 +20,11 @@ Content Warning becomes !contentwarning)
 
 Any channel point redeems must have the exact same name on AltStream as they do on Twitch.
 
-Channel Raided alerts *might* work, but untested. Somebody raid me please! :3  
-Raid and Follow alerts must use the Generic -> "Channel Raided" event in MIU, not the "Twitch Channel Raided" event
-Subs / Tips don't work as they are not yet officially available in the API.
+Raid, Follow, Tip & Sub alerts must use the Generic -> "Channel Raided" event in MIU, not the "Twitch Channel Raided" event.  
 
-Events fired from this should set $PlatformEx = altstream. I have no idea if this actually gets passed through
+Sub, Tip & Follow alerts use unofficial APIs. Only enable the unofficial API feature if you need these 3 specific events as they cause polling to happen and could easily be broken by a site update.  
+
+Events fired from FIU should set $PlatformEx = altstream. I have no idea if this actually gets passed through. If it does you can check for that before responding on Twitch, for example
 
 ### Security Warning (BanList.txt)
 MixItUp does not give me visibility of any permissions you have set on commands, and the dev API bypasses permissions anyway. This means that
@@ -36,7 +36,7 @@ they get banned. I will not be held responsible if a rando runs your !endstream 
 
 ### Issues with MIU currency/inventory and actions that refer to the calling user
 Because we're spoofing twitch. If an altstream user doesn't have a twitch account with an identical name, then as far as MIU is concerned they
-don't exist. Where users do exist, I would need to look them by name and provide the MIU ID for them in order for certain commands to work.
+don't exist. Where users do exist, I would need to look them up by name and provide the MIU ID for them in order for certain commands to work.
 This is risky because some may exist, some may not and some may actually be different people. If I did this it would appear to work most of
 the time, sometimes have the wrong person and sometimes have no-one. When it's no-one it defaults to the streamer
 
@@ -55,16 +55,16 @@ I recommend simply not using these types of commands. The most common example is
 ```UserMinutes```  
 ```UserLastSeenAge```  - Not tracking users between sessions  
 ```UserLastSeenPrecise```  
-```UserFollowAge```    - Broken in upstream API  
+```UserFollowAge```    - Unavailable in upstream API  
 ```UserFollowDays```  
-```UserFollowMonths``` - Possible (once age is fixed) but pain in the arse to implement. Maybe in future  
+```UserFollowMonths```
 ```UserFollowYears```  
 ```UserSubAge```       - We don't have this info in AltStream  
 ```UserSubMonths```  
 ```UserSubTier```      - I don't think this exists on AltStream?  
 ```UserSubBadge```     - Maybe possible need to check API  
 ```UserInChat```       - Not tracking users  
-```UserIsFollower```   - Broken in upstream API  
+```UserIsFollower```   - Unavailable in upstream API  
 ```UserIsRegular```    - Not tracking users  
 ```UserIsVIP```        - I don't think this exists either  
 ```UserIsSpecialityExcluded``` - MIU-specific  
