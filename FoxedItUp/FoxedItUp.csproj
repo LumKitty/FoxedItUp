@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <Reference Include="AltStreamLib">
-      <HintPath>..\..\Libs\AltStreamLib v0.3.13\net481\AltStreamLib.dll</HintPath>
+      <HintPath>..\..\Libs\AltStreamLib-v0.4.0-net481\AltStreamLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 

@@ -203,7 +203,9 @@ namespace FoxedItUp {
             try {
                 string Command = "";
                 string Args = "";
-
+                if (Settings.ShowAltStreamLibMessages) {
+                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(Context));
+                }
                 if (!string.IsNullOrEmpty(Context.Text)) {
                     if (Context.Text.Substring(0, 1) == "!") {
                         Log($"Received command message {Context.Text}");
