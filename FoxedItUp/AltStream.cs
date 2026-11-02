@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 using static FoxedItUp._Settings;
 using static FoxedItUp.Functions;
@@ -203,9 +204,7 @@ namespace FoxedItUp {
             try {
                 string Command = "";
                 string Args = "";
-                if (Settings.ShowAltStreamLibMessages) {
-                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(Context));
-                }
+                
                 if (!string.IsNullOrEmpty(Context.Text)) {
                     if (Context.Text.Substring(0, 1) == "!") {
                         Log($"Received command message {Context.Text}");
@@ -250,6 +249,9 @@ namespace FoxedItUp {
             await AltMessageReceived(obj.Context,true);
         }
         private static async void AltEventClient_OnMessageReceived(Message obj) {
+            if (Settings.ShowAltStreamLibMessages) {
+                Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+            }
             await AltMessageReceived(obj);
 
         }
