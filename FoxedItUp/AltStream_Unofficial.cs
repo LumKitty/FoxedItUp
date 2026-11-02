@@ -53,7 +53,7 @@ namespace FoxedItUp {
                                         await MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, User["username"].ToString());
                                     }
                                     break;
-
+/*
                                 case "subscription":
                                     User = (JObject)Event["user"];
 
@@ -80,7 +80,7 @@ namespace FoxedItUp {
                                         await MixItUpClient.ChannelDonation.RunCommand(Message, Settings.SpoofPlatform, User["username"].ToString(), CurrencySymbol, Amount);
                                     }
                                     break;
-
+*/
                                 case "raid": break; // Raids are handled in the official lib
                                 default:
                                     Log($"Received unsupported event type: {Event["type"]}");

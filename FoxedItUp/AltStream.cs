@@ -58,8 +58,8 @@ namespace FoxedItUp {
 
                 AltEventClient.OnRaidReceived += AltEventClient_OnRaidReceived;
                 // AltEventClient.OnFollowReceived += AltEventClient_OnFollowReceived;
-                // AltEventClient.OnSubscriptionReceived += AltEventClient_OnSubscriptionReceived;
-                // AltEventClient.OnTipReceived += AltEventClient_OnTipReceived;
+                AltEventClient.OnSubscriptionReceived += AltEventClient_OnSubscriptionReceived;
+                AltEventClient.OnTipReceived += AltEventClient_OnTipReceived;
                 AltEventClient.OnRedemptionReceived += AltEventClient_OnRedemptionReceived;
                 AltEventClient.OnUnhandledReceived += AltEventClient_OnUnhandledReceived;
 
@@ -86,6 +86,9 @@ namespace FoxedItUp {
             
             User.UserInfo = AltAPI.GetUserSettingsInfoAsync(UserName).GetAwaiter().GetResult();
             ApiResponse<ChannelResponse> Temp  = AltAPI.GetChannelInfoAsync(UserName).GetAwaiter().GetResult();
+            if (Settings.ShowRandomJSON) {
+                Log(Newtonsoft.Json.JsonConvert.SerializeObject(Temp));
+            }
 
             if (Temp != null && Temp.Data != null) {
                 User.ChannelInfo = Temp.Data;
@@ -112,22 +115,21 @@ namespace FoxedItUp {
             return null;
         }
 
-        /* Will be available in a future version of AltStreamLib
-        private static void AltEventClient_OnTipReceived(EventMessage obj) {
+        private static async void AltEventClient_OnTipReceived(EventMessage obj) {
             try { 
                 Log("Subscription received");
                 KofiEvent DonationEvent = (KofiEvent)obj.Event;
                 Log($"* {DonationEvent.Username} Donated {DonationEvent.Currency}{DonationEvent.Amount} - {DonationEvent.Message}");
            
                 if (MixItUpClient.ChannelDonation != null) {
-                    MixItUpClient.ChannelDonation.RunCommand(DonationEvent.Message, Settings.SpoofPlatform, DonationEvent.Username, DonationEvent.Currency, DonationEvent.Amount);
+                    await MixItUpClient.ChannelDonation.RunCommand(DonationEvent.Message, Settings.SpoofPlatform, DonationEvent.Username, DonationEvent.Currency, DonationEvent.Amount);
                 }
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
             }
         }
 
-        private static void AltEventClient_OnSubscriptionReceived(EventMessage obj) {
+        private static async void AltEventClient_OnSubscriptionReceived(EventMessage obj) {
             try {
                 Log("Subscription received");
                 KofiEvent SubEvent = (KofiEvent)obj.Event;
@@ -135,18 +137,18 @@ namespace FoxedItUp {
 
                 if (SubEvent.IsFirstSubscriptionPayment) {
                     if (MixItUpClient.ChannelSubscribed != null) {
-                        MixItUpClient.ChannelSubscribed.RunCommand("", Settings.SpoofPlatform, SubEvent.Username, SubEvent.TierName);
+                        await MixItUpClient.ChannelSubscribed.RunCommand("", Settings.SpoofPlatform, SubEvent.Username, SubEvent.TierName);
                     }
                 } else {
                     if (MixItUpClient.ChannelResubscribed != null) {
-                        MixItUpClient.ChannelResubscribed.RunCommand("", Settings.SpoofPlatform, SubEvent.Username, SubEvent.TierName);
+                        await MixItUpClient.ChannelResubscribed.RunCommand("", Settings.SpoofPlatform, SubEvent.Username, SubEvent.TierName);
                     }
                 }
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
             }
         }
-
+        /* Will be available in a future version of AltStreamLib
         private static void AltEventClient_OnFollowReceived(EventMessage obj) {
             try {
 
@@ -164,11 +166,17 @@ namespace FoxedItUp {
 
         private static void AltEventClient_OnUnhandledReceived(EventMessage obj) {
             Log("Unrecognised Event:");
+            if (Settings.ShowRandomJSON) {
+                Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+            }
             Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
         }
 
         private static async void AltEventClient_OnRedemptionReceived(EventMessage obj) {
             try {
+                if (Settings.ShowRandomJSON) {
+                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+                }
                 AltStreamLib.EventSub.Chat.Models.Events.Redemption RedeemEvent = (AltStreamLib.EventSub.Chat.Models.Events.Redemption)obj.Event;
                 Log($"* {RedeemEvent.From} redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
 
@@ -188,9 +196,10 @@ namespace FoxedItUp {
 
         private static async void AltEventClient_OnRaidReceived(EventMessage obj) {
             try {
-                Log("Raid received");
                 AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming RaidEvent = (AltStreamLib.EventSub.Chat.Models.Events.RaidIncoming)obj.Event;
-
+                if (Settings.ShowRandomJSON) {
+                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+                }
                 Log($"* {RaidEvent.SourceUsername} raided with {RaidEvent.Viewers}");
                 if (MixItUpClient.ChannelRaided != null) {
                     await MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, RaidEvent.SourceUsername, RaidEvent.Viewers);
@@ -246,10 +255,13 @@ namespace FoxedItUp {
             }
         }
         private static async void AltEventClient_OnHighlightReceived(EventMessage obj) {
+            if (Settings.ShowRandomJSON) {
+                Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+            }
             await AltMessageReceived(obj.Context,true);
         }
         private static async void AltEventClient_OnMessageReceived(Message obj) {
-            if (Settings.ShowAltStreamLibMessages) {
+            if (Settings.ShowRandomJSON) {
                 Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
             }
             await AltMessageReceived(obj);
