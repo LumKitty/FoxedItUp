@@ -33,7 +33,7 @@ namespace FoxedItUp {
         internal static EventSubClient AltEventClient;
         internal static Dictionary<string, AltStreamUserInfo> UserInfoCache = new Dictionary<string, AltStreamUserInfo>();
         internal static List<String> Moderators = new List<string>();
-
+         
         internal static async Task UpdateModerators(string ChannelName) {
             List<string> TempModerators = new List<string>();
             Log($"Looking up moderators for: {ChannelName}");
@@ -45,6 +45,7 @@ namespace FoxedItUp {
             }
             if (TempModerators.Count > 0) { Moderators = TempModerators; }
         }
+        
         
         internal static void Connect(string _ChannelName) {
             try {
@@ -297,6 +298,15 @@ namespace FoxedItUp {
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
             }
+        }
+
+        internal static async void SendChat(string Message) {
+            Log($"Sending chat message {Message}");
+            await AltAPI.SendChatMessageAsync(Message);
+        }
+        internal static async void ShoutOut(string UserName) {
+            Log($"Sending shoutout for {UserName}");
+            await AltAPI.SendShoutoutAsync(ChannelName, UserName);
         }
     }
 }

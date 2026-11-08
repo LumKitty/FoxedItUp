@@ -35,7 +35,7 @@ namespace FoxedItUp {
             await HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString());
         }
 
-        internal JObject DefaultSpecialIdentifiersOld(string UserName, string Prefix = "", string RealPlatform = "AltStream") {
+        internal JObject DefaultSpecialIdentifiers(string UserName, string Prefix = "", string RealPlatform = "AltStream") {
             JObject SpecialIdentifiers = null;
             if (RealPlatform == "AltStream") {
                 AltStreamUserInfo User = AltStream.GetBasicUserInfo(UserName);
@@ -210,17 +210,25 @@ namespace FoxedItUp {
     }
 
     internal class MIUChatCommand : MIUCommandBase {
+        internal bool AllowStreamer = true;
+        internal bool AllowModerator = true;
+        internal bool AllowUser = true;
         internal List<string> TriggerNames = new List<string>();
         internal async Task RunCommand(string Arguments, string SpoofPlatform, Author User) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
-            await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+            if (AllowUser || (User.Roles.Broadcaster && AllowStreamer) || (User.Roles.Moderator && AllowModerator)) {
+
+                JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
+                await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
+            } else {
+                Log($"No permission for {User.ChannelName} to run this");
+            }
         }
         internal MIUChatCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
     }
 
     internal class MIURaidCommand : MIUCommandBase {
         internal async Task RunCommand(string Arguments, string SpoofPlatform, Author User, int RaidSize) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
             SpecialIdentifiers.Add(
                 new JProperty("RaidViewerCount", RaidSize.ToString()) // Yes, really! It fails if this is an int)
             ); 
@@ -231,7 +239,7 @@ namespace FoxedItUp {
 
     internal class MIURedeemCommand : MIUCommandBase {
         internal async Task RunCommand(string RedeemMessage, string SpoofPlatform, Author User) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
             SpecialIdentifiers.Add(new JProperty("Message", RedeemMessage));
             await _RunCommand("", SpoofPlatform, SpecialIdentifiers);
         }
@@ -240,7 +248,7 @@ namespace FoxedItUp {
 
     internal class MIUSubscriptionCommand : MIUCommandBase {
         internal async Task RunCommand(string SubscriptionMessage, string SpoofPlatform, Author User, string Tier) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
             SpecialIdentifiers.Add(new JProperty("Message", SubscriptionMessage));
             SpecialIdentifiers.Add(new JProperty("UserSubPlan", Tier));
             await _RunCommand("", SpoofPlatform, SpecialIdentifiers);
@@ -263,7 +271,7 @@ namespace FoxedItUp {
 
     internal class MIUUnofficialCommand : MIUCommandBase {
         internal virtual async Task RunCommand(string Arguments, string SpoofPlatform, string UserName) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiersOld(UserName);
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(UserName);
             await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
         }
         internal MIUUnofficialCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
@@ -297,7 +305,7 @@ namespace FoxedItUp {
                     count = ((JArray)Results["Commands"]).Count;
                     // Console.WriteLine("Count: " + count.ToString());
                     foreach (JObject Result in (JArray)Results["Commands"]) {
-                        //Log(Result.ToString());
+                        Log(Result.ToString());
                         if (!Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower(), StringComparer.OrdinalIgnoreCase) &&
                           !Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower().Replace(" ",""), StringComparer.OrdinalIgnoreCase)) {
                             MIUCommandBase TempCommand = new MIUCommandBase();
@@ -309,9 +317,52 @@ namespace FoxedItUp {
                                     case "chat":
                                     case "pre-made":
                                         MIUChatCommand TempChatCommand = new MIUChatCommand(TempCommand);
-                                        TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
+                                        if (Result.ContainsKey("Triggers")) {
+                                            foreach (JValue Trigger in (JArray)Result["Triggers"]) {
+                                                TempChatCommand.TriggerNames.Add(Trigger.ToString().Substring(1));
+                                            }
+                                        } else {
+                                            TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
+                                        }
+
+                                        if (Result.ContainsKey("RoleRequirements")) {
+                                            TempChatCommand.AllowStreamer = false;
+                                            TempChatCommand.AllowModerator = false;
+                                            TempChatCommand.AllowUser = false;
+                                            foreach (JObject RoleRequirement in Result["RoleRequirements"]) {
+                                                if ((new string[] { "all", Settings.ReadCommandPermissionsFrom.ToLower() }).Contains(RoleRequirement["Platform"].ToString().ToLower()) ) {
+                                                    switch (RoleRequirement["Role"].ToString().ToLower()) {
+                                                        case "streamer": 
+                                                            TempChatCommand.AllowStreamer = true; 
+                                                            break;
+                                                        case "moderator":
+                                                        case "regular":
+                                                        case "follower":
+                                                            TempChatCommand.AllowStreamer = true;
+                                                            TempChatCommand.AllowModerator = true;
+                                                            break;
+                                                        case "user":
+                                                            TempChatCommand.AllowStreamer = true;
+                                                            TempChatCommand.AllowModerator = true;
+                                                            TempChatCommand.AllowUser = true;
+                                                            break;
+                                                        case "banned":
+                                                            foreach (JValue Role in (JArray)RoleRequirement["Roles"]) {
+                                                                switch (Role.ToString().ToLower()) {
+                                                                    case "streamer": TempChatCommand.AllowStreamer = true; break;
+                                                                    case "moderator": TempChatCommand.AllowModerator = true; break;
+                                                                    case "user": TempChatCommand.AllowUser = true; break;
+                                                                }
+                                                            }
+                                                            break;
+
+                                                    }
+                                                }
+                                            }
+                                        }
+
                                         TempMIUChatCommands.Add(TempChatCommand);
-                                        Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)})");
+                                        Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)}) Streamer: {TempChatCommand.AllowStreamer}, Moderator: {TempChatCommand.AllowModerator}, User: {TempChatCommand.AllowUser}");
 
                                         break;
                                     case "twitch channel points":
