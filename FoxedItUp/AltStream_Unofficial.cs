@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using static FoxedItUp.httpRequest;
 using static FoxedItUp.Functions;
 using static FoxedItUp._Settings;
-using AltStreamLib.EventSub.Chat.Models.Events;
+using AltStreamLib.EventSub.Chat.Models;
 
 namespace FoxedItUp {
     internal static class AltStream_Unofficial {
@@ -47,7 +47,11 @@ namespace FoxedItUp {
                             switch (EventType) { 
                                 case "follow":
                                     User = (JObject)Event["user"];
-                                   
+
+                                    if (Settings.ShowRandomJSON) {
+                                        Log(Event.ToString());
+                                    }
+
                                     Log($"* {User["username"]} just followed!");
                                     if (MixItUpClient.ChannelFollowed != null) {
                                         await MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, User["username"].ToString());

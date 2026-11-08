@@ -17,6 +17,7 @@ namespace FoxedItUp {
         public bool ParseChannelPointsFromVPZone = false;
         public string SpoofPlatform = "Twitch";
         public bool EnableUnofficialEvents = false;
+        public bool IncludeAccountAgeAndGameInfo = false;
         public bool ShowAltStreamLibMessages = false;
         public bool ShowAltStreamLibPingMessages = false;
         public bool ShowAltStreamChatMessages = true;
@@ -25,6 +26,7 @@ namespace FoxedItUp {
         public bool ShowAltStreamEvents = true;
         public bool ShowRandomJSON = false;
         public bool ShowMIURawCommands = false;
+        public string BotToken = "";
         [JsonIgnore] public string[] BannedCommands = new string[0];
     }
     

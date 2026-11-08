@@ -14,6 +14,7 @@ namespace FoxedItUp {
             string AppDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string BanListFile = AppDir + "\\BanList.txt";
             string JsonFile = AppDir + "\\Settings.json";
+            bool SettingsOK = true;
 
             SetWindowTitle("init");
 
@@ -36,11 +37,20 @@ updatecommand");
                 Log("to general users. MixItUp does not give me information on who has permission");
                 Log("to use what commands and this method bypasses all permissions. You should ban");
                 Log("all !commands that you don't want available to everyone");
+                SettingsOK = false;
+            }
+
+            if (String.IsNullOrEmpty(Settings.BotToken)) {
+                Log("Please create a bot token at https://https://altstream.online/YOUR_CHANNEL/settings?tab=bot");
+                SettingsOK = false;
             }
 
             if (String.IsNullOrEmpty(Settings.ChannelName)) {
-                Log("");
                 Log($"Please set your channelname in {JsonFile}");
+                SettingsOK = false;
+            }
+
+            if (!SettingsOK) {
                 Log("");
                 Log("Press ENTER to exit");
                 Console.ReadLine();

@@ -69,5 +69,8 @@ namespace FoxedItUp {
         internal static int DateTimeToDays(DateTime datetime) {
             return (int)Math.Floor((DateTime.UtcNow - datetime).TotalDays);
         }
+        internal static string GetBotToken() {
+            return Settings.BotToken;
+        }
     }
 }
