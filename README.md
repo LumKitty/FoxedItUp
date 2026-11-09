@@ -32,7 +32,7 @@ The current public release of MixItUp does not give me visibility of any permiss
 This means that by default commands you have restricted to Moderators only, or Streamer only, are made available to everyone on AltStream.  
 
 The current public preview of MixItUp (1.8.210 or higher) does give me visibility of permissions and these are enforced by default. However we cannot
-track "follower" or "regular" so these are downgraded to just "user". The only valid permissions are "user", "subscriber", "moderator" and "streamer".
+track "follower" or "regular" so these are downgraded to just "user". (ie follower-only redeems will only work for >= subscriber) The only valid permissions are "user", "subscriber", "moderator" and "streamer".
 Subscriber is untested!
 
 For the mainline release the only way to remain secure is to ban all !commands that are not generally available to everyone. By default I fill this list with
