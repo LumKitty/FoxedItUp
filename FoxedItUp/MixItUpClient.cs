@@ -42,7 +42,7 @@ namespace FoxedItUp {
                 
                 if (Settings.ShowRandomJSON) {
                     Log("Result object");
-                    Log(User.CreatedAt.ToString());
+                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(User.UserInfo));
                 }
                 //TimeSpan FollowAge;
 
@@ -53,11 +53,13 @@ namespace FoxedItUp {
 
                 List<string> Roles = new List<string>();
                 //if (User.IsFollower) { Roles.Add("Follower"); }
+                
                 if (User.IsSubscriber) { Roles.Add("Subscriber"); }
                 if (User.IsModerator) { Roles.Add("Moderator"); }
+                if (User.IsStreamer) { Roles.Add("Streamer"); }
 
                 SpecialIdentifiers = new JObject(
-                    new JProperty($"{Prefix}UserName", UserName),
+                    new JProperty($"{Prefix}UserName", User.UserInfo.Username),
                     new JProperty($"{Prefix}UserDisplayName", User.UserInfo.Name),
                     new JProperty($"{Prefix}UserColor", User.UserInfo.ChatColor),
                     new JProperty($"{Prefix}User{Settings.SpoofPlatform}Color", User.UserInfo.ChatColor),
@@ -69,33 +71,38 @@ namespace FoxedItUp {
                     new JProperty($"{Prefix}UserRoles", String.Join(", ", Roles)),
                     //new JProperty($"{Prefix}UserFollowAge", FollowAge.ToString()),
                     //new JProperty($"{Prefix}UserFollowDays", ((int)Math.Floor(FollowAge.TotalDays)).ToString()),
-                    new JProperty($"{Prefix}UserAccountAge", DateTimeToAge(User.CreatedAt)),
-                    new JProperty($"{Prefix}UserAccountAgeDays", DateTimeToDays(User.CreatedAt).ToString()),
                     new JProperty($"{Prefix}UserAlejoPronouns", User.UserInfo.Pronouns)
                 );
 
                 if (String.IsNullOrEmpty(Prefix)) { SpecialIdentifiers.Add(new JProperty($"{Prefix}PlatformEx", RealPlatform)); }
 
-                if (UserName.ToLower() == User.UserInfo.Name.ToLower()) {
+                if (User.UserInfo.Username.ToLower() == User.UserInfo.Name.ToLower()) {
                     SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", User.UserInfo.Name));
                 } else {
                     SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", $"{User.UserInfo.Name} ({UserName})"));
                 }
-                if (User.IsModerator) {
+                if (User.IsStreamer) {
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserPrimaryRole", "Streamer"));
+                } else if (User.IsModerator) {
                     SpecialIdentifiers.Add(new JProperty($"{Prefix}UserPrimaryRole", "Moderator"));
                 } else if (User.IsSubscriber) {
                     SpecialIdentifiers.Add(new JProperty($"{Prefix}UserPrimaryRole", "Subscriber"));
-                    //} else if (User.IsFollower) {
-                    //    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Follower"));
+                //} else if (User.IsFollower) {
+                //    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Follower"));
                 }
 
-                if (User.ChannelInfo != null && User.ChannelInfo.Stream != null) {
-                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamTitle", User.ChannelInfo.Stream.Title));
-                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamIsLive", User.ChannelInfo.Stream.IsLive.ToString()));
-                    if (User.ChannelInfo.Stream.Game != null) {
-                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGame", User.ChannelInfo.Stream.Game.Name));
-                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGameName", User.ChannelInfo.Stream.Game.Name));
-                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGameImage", User.ChannelInfo.Stream.Game.CoverUrl));
+                if (Settings.IncludeAccountAgeAndGameInfo) {
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserAccountAge", DateTimeToAge(User.CreatedAt)));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserAccountAgeDays", DateTimeToDays(User.CreatedAt).ToString()));
+
+                    if (User.ChannelInfo != null && User.ChannelInfo.Stream != null) {
+                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamTitle", User.ChannelInfo.Stream.Title));
+                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamIsLive", User.ChannelInfo.Stream.IsLive.ToString()));
+                        if (User.ChannelInfo.Stream.Game != null) {
+                            SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGame", User.ChannelInfo.Stream.Game.Name));
+                            SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGameName", User.ChannelInfo.Stream.Game.Name));
+                            SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGameImage", User.ChannelInfo.Stream.Game.CoverUrl));
+                        }
                     }
                 }
             }
@@ -111,6 +118,7 @@ namespace FoxedItUp {
 
                 List<string> Roles = new List<string>();
                 //if (User.IsFollower) { Roles.Add("Follower"); }
+                if (Settings.APISubFlipWorkaround) { User.Roles.ChannelSubscriber = User.Roles.AltstreamSubscriber; }
                 if (User.Roles.ChannelSubscriber) { Roles.Add("Subscriber"); }
                 if (User.Roles.Moderator) { Roles.Add("Moderator"); }
 
@@ -128,8 +136,8 @@ namespace FoxedItUp {
                     new JProperty($"{Prefix}PlatformEx", RealPlatform),
                     new JProperty($"{Prefix}UserAlejoPronouns", User.Pronouns)
                 );
-                if (!String.IsNullOrEmpty(User.Display)) { 
-                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserDisplayName", User.Display)); 
+                if (!String.IsNullOrEmpty(User.DisplayName)) { 
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserDisplayName", User.DisplayName)); 
                 } else {
                     SpecialIdentifiers.Add(new JProperty($"{Prefix}UserDisplayName", User.ChannelName));
                 }
@@ -151,7 +159,7 @@ namespace FoxedItUp {
 
 
 
-                if (!String.IsNullOrEmpty(User.Display) && (User.ChannelName.ToLower() != User.Display.ToLower())) {
+                if (!String.IsNullOrEmpty(User.DisplayName) && (User.ChannelName.ToLower() != User.DisplayName.ToLower())) {
                     SpecialIdentifiers.Add(new JProperty("UserFullDisplayName", $"{User.ChannelName} ({User.ChannelName})"));
                 } else { 
                     SpecialIdentifiers.Add(new JProperty("UserFullDisplayName", User.ChannelName));
@@ -223,11 +231,12 @@ namespace FoxedItUp {
     internal class MIUChatCommand : MIUCommandBase {
         internal bool AllowStreamer = true;
         internal bool AllowModerator = true;
-        internal bool AllowUser = true;
+        internal bool AllowSubscriber = true;
         internal List<string> TriggerNames = new List<string>();
         internal async Task RunCommand(string Arguments, string SpoofPlatform, Author User) {
-            if (AllowUser || (User.Roles.Broadcaster && AllowStreamer) || (User.Roles.Moderator && AllowModerator)) {
-                JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
+            if (Settings.APISubFlipWorkaround) { User.Roles.ChannelSubscriber = User.Roles.AltstreamSubscriber; }
+            if (AllowUser || (User.Roles.Broadcaster && AllowStreamer) || (User.Roles.Moderator && AllowModerator) || (User.Roles.ChannelSubscriber && AllowSubscriber)) {
+                JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
                 if (!String.IsNullOrEmpty(Arguments)) {
                     string TargetUser;
                     int n = Arguments.IndexOf(' ');
@@ -251,7 +260,7 @@ namespace FoxedItUp {
 
     internal class MIURaidCommand : MIUCommandBase {
         internal async Task RunCommand(string Arguments, string SpoofPlatform, Author User, int RaidSize) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
             SpecialIdentifiers.Add(
                 new JProperty("RaidViewerCount", RaidSize.ToString()) // Yes, really! It fails if this is an int)
             ); 
@@ -262,7 +271,7 @@ namespace FoxedItUp {
 
     internal class MIURedeemCommand : MIUCommandBase {
         internal async Task RunCommand(string RedeemMessage, string SpoofPlatform, Author User, string RedeemID=null) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
             SpecialIdentifiers.Add(new JProperty("Message", RedeemMessage));
             if (!String.IsNullOrEmpty(RedeemID)) {
                 SpecialIdentifiers.Add(new JProperty("AltRedeemID", RedeemID));
@@ -274,7 +283,7 @@ namespace FoxedItUp {
 
     internal class MIUSubscriptionCommand : MIUCommandBase {
         internal async Task RunCommand(string SubscriptionMessage, string SpoofPlatform, Author User, string Tier) {
-            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
+            JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
             SpecialIdentifiers.Add(new JProperty("Message", SubscriptionMessage));
             SpecialIdentifiers.Add(new JProperty("UserSubPlan", Tier));
             await _RunCommand("", SpoofPlatform, SpecialIdentifiers);

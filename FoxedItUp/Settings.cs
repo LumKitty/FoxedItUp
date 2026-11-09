@@ -11,15 +11,17 @@ namespace FoxedItUp {
     public class __Settings {
         public string ChannelName = "";
         public string miuURL = "http://localhost:8911/api/v2";
-        public bool ParseChannelPointsFromTwitch = true;
-        public bool ParseChannelPointsFromKick = false;
-        public bool ParseChannelPointsFromVelora = false;
-        public bool ParseChannelPointsFromVPZone = false;
+        public string BotToken = "";
         public int HttpPort = 41757;
         public string SpoofPlatform = "Twitch";
         public string ReadCommandPermissionsFrom = "Twitch";
         public bool EnableUnofficialEvents = false;
         public bool IncludeAccountAgeAndGameInfo = false;
+        public bool APISubFlipWorkaround = true;
+        public bool ParseChannelPointsFromTwitch = true;
+        public bool ParseChannelPointsFromKick = false;
+        public bool ParseChannelPointsFromVelora = false;
+        public bool ParseChannelPointsFromVPZone = false;
         public bool ShowAltStreamLibMessages = false;
         public bool ShowAltStreamLibPingMessages = false;
         public bool ShowAltStreamChatMessages = true;
@@ -28,7 +30,7 @@ namespace FoxedItUp {
         public bool ShowAltStreamEvents = true;
         public bool ShowRandomJSON = false;
         public bool ShowMIURawCommands = false;
-        public string BotToken = "";
+        
         [JsonIgnore] public string[] BannedCommands = new string[0];
     }
     

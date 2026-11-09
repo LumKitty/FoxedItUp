@@ -18,6 +18,7 @@ namespace FoxedItUp {
     internal class AltStreamUserInfo {
         internal UserSettingsResponse UserInfo = null;
         internal ChannelResponse ChannelInfo = null;
+        internal bool IsStreamer = false;
         internal bool IsModerator = false;
         internal bool IsSubscriber = false;
         //internal bool IsFollower = false;          /* borked at API level
@@ -38,7 +39,6 @@ namespace FoxedItUp {
             List<string> TempModerators = new List<string>();
             Log($"Looking up moderators for: {ChannelName}");
             ModResponse Response = await AltAPI.GetModInfoAsync(ChannelName);
-
             foreach (Moderator moderator in Response.Moderators) {
                 Log($"Found moderator: {moderator.Username}");
                 TempModerators.Add(moderator.Username.ToLower());
@@ -89,7 +89,11 @@ namespace FoxedItUp {
             User = new AltStreamUserInfo();
 
             User.UserInfo = AltAPI.GetUserSettingsInfoAsync(UserName).GetAwaiter().GetResult();
-            User.ChannelInfo = AltAPI.GetChannelInfoAsync(UserName).GetAwaiter().GetResult();
+            if (Settings.IncludeAccountAgeAndGameInfo) {
+                User.ChannelInfo = AltAPI.GetChannelInfoAsync(UserName).GetAwaiter().GetResult();
+            } else {
+                User.ChannelInfo = null;
+            }
             if (Settings.ShowRandomJSON) {
                 Log(Newtonsoft.Json.JsonConvert.SerializeObject(User.ChannelInfo));
             }
@@ -97,8 +101,13 @@ namespace FoxedItUp {
             //Log(JsonConvert.SerializeObject(User.UserInfo, Formatting.Indented));
 
             if (Moderators.Contains(UserName.ToLower())) { User.IsModerator = true; }
-            User.IsSubscriber = User.UserInfo.IsSubscriber;
+            if (Settings.APISubFlipWorkaround) {
+                User.IsSubscriber = false;
+            } else {
+                User.IsSubscriber = User.UserInfo.IsSubscriber;
+            }
             //User.IsFollower = !String.IsNullOrEmpty(User.UserInfo.FollowedAt);
+            User.IsStreamer = (UserName.ToLower() == Settings.ChannelName.ToLower());
             User.FetchedAt = DateTime.UtcNow;
 
             if (User.UserInfo != null) {
@@ -186,7 +195,7 @@ namespace FoxedItUp {
                     Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
                 }
                 Redemption RedeemEvent = obj.Redemption;
-                Log($"* {RedeemEvent.From.ChannelName} ({RedeemEvent.From.Display}) redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
+                Log($"* {RedeemEvent.From.ChannelName} ({RedeemEvent.From.DisplayName}) redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
 
                 string PointsName = RedeemEvent.RewardName.ToLower();
                 Log($"Attempting to run command {PointsName}");
@@ -234,12 +243,12 @@ namespace FoxedItUp {
                                 Log($"Invalid message {Context.Message.Text}"); break;
                             case -1:
                                 Command = Context.Message.Text.Substring(1);
-                                Log($"* {Context.Author.ChannelName} ({Context.Author.Display}) used command '{Command}'");
+                                Log($"* {Context.Author.ChannelName} ({Context.Author.DisplayName}) used command '{Command}'");
                                 break;
                             default:
                                 Command = Context.Message.Text.Substring(1, n - 1);
                                 Args = Context.Message.Text.Substring(n + 1);
-                                Log($"* {Context.Author.ChannelName} ({Context.Author.Display}) used command '{Command}' with args: {Args}");
+                                Log($"* {Context.Author.ChannelName} ({Context.Author.DisplayName}) used command '{Command}' with args: {Args}");
                                 break;
                         }
 
@@ -254,7 +263,7 @@ namespace FoxedItUp {
                             }
                         }
                     } else {
-                        Log($"<{Context.Author.ChannelName}> ({Context.Author.Display}) {Context.Message.Text}");
+                        Log($"<{Context.Author.ChannelName}> ({Context.Author.DisplayName}) {Context.Message.Text}");
                     }
                 } else {
                     Log($"Received empty message: {Context.ToString()}");
