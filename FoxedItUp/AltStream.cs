@@ -329,13 +329,13 @@ namespace FoxedItUp {
         }
         internal static async void ShoutOut(string UserName) {
             Log($"Sending shoutout for {UserName}");
-            await AltAPI.SendShoutoutAsync(ChannelName, UserName);  // Not working in AltStreamLib currently
-            /*
+            //await AltAPI.SendShoutoutAsync(ChannelName, UserName);  // Not working in AltStreamLib currently
+            
             await httpRequest.HttpRequest("POST", "https://altstream.online/api/shoutout", new JObject(
                 new JProperty("channel", ChannelName),
                 new JProperty("target", UserName)
             ).ToString(), Settings.BotToken);
-            */
+            
         }
         internal static async void CompleteRedeem(string ID, bool Fulfilled=true) {
             int intID;
