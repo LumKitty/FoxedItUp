@@ -118,7 +118,6 @@ namespace FoxedItUp {
 
                 List<string> Roles = new List<string>();
                 //if (User.IsFollower) { Roles.Add("Follower"); }
-                if (Settings.APISubFlipWorkaround) { User.Roles.ChannelSubscriber = User.Roles.AltstreamSubscriber; }
                 if (User.Roles.ChannelSubscriber) { Roles.Add("Subscriber"); }
                 if (User.Roles.Moderator) { Roles.Add("Moderator"); }
 
@@ -234,7 +233,6 @@ namespace FoxedItUp {
         internal bool AllowSubscriber = true;
         internal List<string> TriggerNames = new List<string>();
         internal async Task RunCommand(string Arguments, string SpoofPlatform, Author User) {
-            if (Settings.APISubFlipWorkaround) { User.Roles.ChannelSubscriber = User.Roles.AltstreamSubscriber; }
             if (AllowUser || (User.Roles.Broadcaster && AllowStreamer) || (User.Roles.Moderator && AllowModerator) || (User.Roles.ChannelSubscriber && AllowSubscriber)) {
                 JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
                 if (!String.IsNullOrEmpty(Arguments)) {

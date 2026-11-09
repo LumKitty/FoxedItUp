@@ -319,30 +319,40 @@ namespace FoxedItUp {
 
         internal static async void SendChat(string Message) {
             Log($"Sending chat message {Message}");
-            //await AltAPI.SendChatMessageAsync(Message);  // Not working in AltStreamLib currently
+            await AltAPI.SendChatMessageAsync(ChannelName, Message);  // Not working in AltStreamLib currently
+            /*
             await httpRequest.HttpRequest("POST", "https://altstream.online/api/v2/chat", new JObject(
                 new JProperty("channel", ChannelName),
                 new JProperty("message", Message)
             ).ToString(), Settings.BotToken);
+            */
         }
         internal static async void ShoutOut(string UserName) {
             Log($"Sending shoutout for {UserName}");
-            //await AltAPI.SendShoutoutAsync(ChannelName, UserName);  // Not working in AltStreamLib currently
+            await AltAPI.SendShoutoutAsync(ChannelName, UserName);  // Not working in AltStreamLib currently
+            /*
             await httpRequest.HttpRequest("POST", "https://altstream.online/api/shoutout", new JObject(
                 new JProperty("channel", ChannelName),
                 new JProperty("target", UserName)
             ).ToString(), Settings.BotToken);
+            */
         }
         internal static async void CompleteRedeem(string ID, bool Fulfilled=true) {
             int intID;
             if (int.TryParse(ID, out intID)) {
+                
                 JObject Message = new JObject(
                     new JProperty("channel", ChannelName),
                     new JProperty("id", intID)
                  );
+                
                 if (Fulfilled) {
+                    Log($"Fulfilling redeem {intID}");
+                //    await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Fulfill);
                     Message.Add(new JProperty("status", "fulfilled"));
                 } else {
+                    Log($"Refunding redeem {intID}");
+                //    await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Refund);
                     Message.Add(new JProperty("status", "refunded"));
                 }
                 //Log(Message.ToString());
