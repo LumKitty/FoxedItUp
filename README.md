@@ -113,8 +113,16 @@ Uses [AltStreamLib](https://github.com/MachaCeleste/AltStreamLib) by [MachaCeles
 Testing: [BeoWynn](https://altstream.online/beowynn)  
 Give me a follow on [AltStream](https://altstream.online/LumKitty) or [Twitch](https://twitch.tv/LumKitty)
 
-### Example - !discord command that supports both Twitch and AltStream
-
+### Examples 
+### !discord command that supports both Twitch and AltStream
 <img width="818" height="1316" alt="image" src="https://github.com/user-attachments/assets/77e7fdec-e3e9-4930-a6e3-104c0d065cb3" />
+
+### Start FoxedItUp with MixItUp
+<img width="804" height="687" alt="image" src="https://github.com/user-attachments/assets/09a15268-a096-450a-89e1-815c0da40ec0" />
+
+### Shutdown FoxedItUp when MixItUpExits
+<img width="799" height="515" alt="image" src="https://github.com/user-attachments/assets/065318a4-2555-42ff-b37f-6fa9255be016" />
+
+
 
 
