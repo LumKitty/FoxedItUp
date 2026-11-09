@@ -22,15 +22,20 @@ Any channel point redeems must have the exact same name on AltStream as they do 
 
 Raid, Follow, Tip & Sub alerts must use the Generic -> "Channel Raided" event in MIU, not the "Twitch Channel Raided" event.  
 
-Sub, Tip & Follow alerts use unofficial APIs. Only enable the unofficial API feature if you need these 3 specific events as they cause polling to happen and could easily be broken by a site update.  
+Follow alerts use unofficial APIs. Only enable the unofficial API feature if you need this specific event as it causes polling to happen and could easily be broken by a site update.  
 
-Events fired from FIU should set $PlatformEx = altstream. I have no idea if this actually gets passed through. If it does you can check for that before responding on Twitch, for example
+Events fired from FIU should set $PlatformEx = AltStream. You can check for that before responding on Twitch, for example  
+Redeem events set $AltRedeemID. This can be used to automatically mark redeems as complete (see the HTTP server section below)
 
 ### Security Warning (BanList.txt)
-MixItUp does not give me visibility of any permissions you have set on commands, and the dev API bypasses permissions anyway. This means that
-by default commands you have restricted to Moderators only, or Streamer only, are made available to everyone on AltStream.  
+The current public release of MixItUp does not give me visibility of any permissions you have set on commands, and the dev API bypasses permissions anyway. 
+This means that by default commands you have restricted to Moderators only, or Streamer only, are made available to everyone on AltStream.  
 
-Therefore the only way to remain secure is to ban all !commands that are not generally available to everyone. By default I fill this list with
+The current public preview of MixItUp (1.8.210 or higher) does give me visibility of permissions and these are enforced by default. However we cannot
+track "follower" or "regular" so these are downgraded to just "user". The only valid permissions are "user", "subscriber", "moderator" and "streamer".
+Subscriber is untested!
+
+For the mainline release the only way to remain secure is to ban all !commands that are not generally available to everyone. By default I fill this list with
 the MixItUp pre-made commands that are mod-only, but if you have made any custom commands, you will need to add them here and actually test that
 they get banned. I will not be held responsible if a rando runs your !endstream command or whatever. You have been warned!
 
@@ -82,9 +87,31 @@ I recommend simply not using these types of commands. The most common example is
 ```UserPatreonTier```  
 ```UserNotes```
 
-All TargetUser special identifiers are missing as well, until I figure out how best to handle that
+TargetUser____ special identifiers are send if the first word of a chat command is a recognised user name
+
+### HTTP server - for sending from MIU to AltStream
+
+Currently there are three endpoints:  
+http://localhost:41757/alt/chat  
+Method: Post  
+Body: Message to send  
+
+http://localhost:41757/alt/shoutout  
+Method: Post  
+Body: Username to Shoutout  
+
+http://localhost:41757/alt/redeem  
+or http://localhost:41757/alt/redeem?refund=true  
+Method: Put  
+Body: ID of redeem to mark as fulfilled (or refunded)  
 
 ### Credits
 Uses [AltStreamLib](https://github.com/MachaCeleste/AltStreamLib) by [MachaCeleste](https://altstream.online/machaceleste)  
 Testing: [BeoWynn](https://altstream.online/beowynn)  
 Give me a follow on [AltStream](https://altstream.online/LumKitty) or [Twitch](https://twitch.tv/LumKitty)
+
+### Example - !discord command that supports both Twitch and AltStream
+
+<img width="818" height="1316" alt="image" src="https://github.com/user-attachments/assets/77e7fdec-e3e9-4930-a6e3-104c0d065cb3" />
+
+
