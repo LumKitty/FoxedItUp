@@ -64,8 +64,8 @@ updatecommand");
             Log($"Banned commands: {Settings.BannedCommands.Count()}");
 
             MixItUpClient.UpdateMiuCommands().Wait();
-            AltStream.UpdateModerators(Settings.ChannelName).Wait(); // Can get rid of all this when Follower info is supported!
             AltStream.Connect(Settings.ChannelName);
+            AltStream.UpdateModerators(Settings.ChannelName).Wait(); // Can get rid of all this when Follower info is supported!
             HTTPServer.Init(Settings.HttpPort);
 
             if (Settings.EnableUnofficialEvents) {

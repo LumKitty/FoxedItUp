@@ -28,7 +28,7 @@ namespace FoxedItUp {
     
     internal static class AltStream {
         private static string ChannelName;
-        internal static AltStreamLib.Api.ApiClient AltAPI = new AltStreamLib.Api.ApiClient(Settings.BotToken);
+        internal static AltStreamLib.Api.ApiClient AltAPI = null;
         private static bool Connected = false;
         internal static EventSubClient AltEventClient;
         internal static Dictionary<string, AltStreamUserInfo> UserInfoCache = new Dictionary<string, AltStreamUserInfo>();
@@ -70,6 +70,9 @@ namespace FoxedItUp {
 
                 Log("Connecting to AltStream");
                 AltEventClient.ConnectAsync().Wait();
+
+                AltAPI = new AltStreamLib.Api.ApiClient(Settings.BotToken);
+
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
             }
@@ -190,7 +193,7 @@ namespace FoxedItUp {
                 MIURedeemCommand PointsCommand = MixItUpClient.MIUChannelPoints.FirstOrDefault(i => (i.Name == PointsName));
                 if (PointsCommand != null) {
                     Log($"Attempting to run command: {PointsCommand.ID}");
-                    await PointsCommand.RunCommand(RedeemEvent.UserInput, Settings.SpoofPlatform, RedeemEvent.From);
+                    await PointsCommand.RunCommand(RedeemEvent.UserInput, Settings.SpoofPlatform, RedeemEvent.From, RedeemEvent.Id);
                 } else {
                     Log("Could not find command");
                 }
@@ -302,11 +305,35 @@ namespace FoxedItUp {
 
         internal static async void SendChat(string Message) {
             Log($"Sending chat message {Message}");
-            await AltAPI.SendChatMessageAsync(Message);
+            //await AltAPI.SendChatMessageAsync(Message);  // Not working in AltStreamLib currently
+            await httpRequest.HttpRequest("POST", "https://altstream.online/api/v2/chat", new JObject(
+                new JProperty("channel", ChannelName),
+                new JProperty("message", Message)
+            ).ToString(), Settings.BotToken);
         }
         internal static async void ShoutOut(string UserName) {
             Log($"Sending shoutout for {UserName}");
-            await AltAPI.SendShoutoutAsync(ChannelName, UserName);
+            //await AltAPI.SendShoutoutAsync(ChannelName, UserName);  // Not working in AltStreamLib currently
+            await httpRequest.HttpRequest("POST", "https://altstream.online/api/shoutout", new JObject(
+                new JProperty("channel", ChannelName),
+                new JProperty("target", UserName)
+            ).ToString(), Settings.BotToken);
+        }
+        internal static async void CompleteRedeem(string ID, bool Fulfilled=true) {
+            int intID;
+            if (int.TryParse(ID, out intID)) {
+                JObject Message = new JObject(
+                    new JProperty("channel", ChannelName),
+                    new JProperty("id", intID)
+                 );
+                if (Fulfilled) {
+                    Message.Add(new JProperty("status", "fulfilled"));
+                } else {
+                    Message.Add(new JProperty("status", "refunded"));
+                }
+                //Log(Message.ToString());
+                await httpRequest.HttpRequest("PATCH", "https://altstream.online/api/v2/rewards/redemptions", Message.ToString(), Settings.BotToken);
+            }
         }
     }
 }

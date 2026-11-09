@@ -1,20 +1,24 @@
-﻿using System;
+﻿using AltStreamLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using static FoxedItUp.Functions;
-using AltStreamLib;
-using System.Net.Http;
 using static FoxedItUp._Settings;
+using static FoxedItUp.Functions;
 
 namespace FoxedItUp {
     internal static class httpRequest {
         private static HttpClient client = new HttpClient();
-        internal static async Task<string> HttpRequest(string Method, string URL, string Content) {
+        internal static async Task<string> HttpRequest(string Method, string URL, string Content, string Authorization=null) {
             try {
                 var jsonData = new StringContent(Content, Encoding.ASCII);
                 jsonData.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                if (!String.IsNullOrEmpty(Authorization)) {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Authorization);
+                }
                 string Response = "";
                 int httpStatus = 0;
 
@@ -51,9 +55,14 @@ namespace FoxedItUp {
                         PatchResult.Dispose();
                         break;
                 }
-                if (Settings.ShowMIURawCommands) { Log("HTTP status: " + httpStatus + " - Response: " + Response); }
+                if (Settings.ShowMIURawCommands) { 
+                    Log("HTTP status: " + httpStatus + " - Response: " + Response); 
+                //} else {
+                    //Log("HTTP status: " + httpStatus);
+                }
 
-                return Response;
+
+                    return Response;
             } catch (Exception e) {
                 Log(e.ToString());
                 return "";

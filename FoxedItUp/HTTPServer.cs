@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static FoxedItUp.Functions;
 using static FoxedItUp._Settings;
+using System.Collections.Specialized;
 
 namespace FoxedItUp {
     internal static class HTTPServer {
@@ -51,19 +52,32 @@ namespace FoxedItUp {
                     Log(Body);
                 }
 
-                if (Request.HttpMethod.ToLower() == "post") {
-                    switch (Request.Url.AbsolutePath.ToLower()) {
-                        case "/alt/chat":
-                            AltStream.SendChat(Body);
-                            Result = 200;
-                            break;
-                        case "/alt/shoutout":
-                            AltStream.ShoutOut(Body);
-                            Result = 200;
-                            break;
-                    }
+                switch (Request.HttpMethod.ToLower()) {
+                    case "post":
+                        switch (Request.Url.AbsolutePath.ToLower()) {
+                            case "/alt/chat":
+                                AltStream.SendChat(Body);
+                                Result = 200;
+                                break;
+                            case "/alt/shoutout":
+                                AltStream.ShoutOut(Body);
+                                Result = 200;
+                                break;
+                        }
+                        break;
+                    case "put":
+                        switch (Request.Url.AbsolutePath.ToLower()) {
+                            case "/alt/redeem":
+                                if (Request.QueryString.HasKeys() && Request.QueryString["refund"].ToLower() == "true") {
+                                    AltStream.CompleteRedeem(Body, false);
+                                } else {
+                                    AltStream.CompleteRedeem(Body, true);
+                                }
+                                Result = 200;
+                                break;
+                        }
+                        break;
                 }
-
                 Context.Response.StatusCode = Result;
                 Context.Response.Close();
 

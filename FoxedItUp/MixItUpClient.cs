@@ -39,7 +39,17 @@ namespace FoxedItUp {
             JObject SpecialIdentifiers = null;
             if (RealPlatform == "AltStream") {
                 AltStreamUserInfo User = AltStream.GetBasicUserInfo(UserName);
+                
+                if (Settings.ShowRandomJSON) {
+                    Log("Result object");
+                    Log(User.CreatedAt.ToString());
+                }
                 //TimeSpan FollowAge;
+
+                if (User.CreatedAt == new DateTime(0)) {
+                    Log("User not found");
+                    return null; 
+                }
 
                 List<string> Roles = new List<string>();
                 //if (User.IsFollower) { Roles.Add("Follower"); }
@@ -61,30 +71,31 @@ namespace FoxedItUp {
                     //new JProperty($"{Prefix}UserFollowDays", ((int)Math.Floor(FollowAge.TotalDays)).ToString()),
                     new JProperty($"{Prefix}UserAccountAge", DateTimeToAge(User.CreatedAt)),
                     new JProperty($"{Prefix}UserAccountAgeDays", DateTimeToDays(User.CreatedAt).ToString()),
-                    new JProperty($"{Prefix}PlatformEx", RealPlatform),
                     new JProperty($"{Prefix}UserAlejoPronouns", User.UserInfo.Pronouns)
                 );
 
+                if (String.IsNullOrEmpty(Prefix)) { SpecialIdentifiers.Add(new JProperty($"{Prefix}PlatformEx", RealPlatform)); }
+
                 if (UserName.ToLower() == User.UserInfo.Name.ToLower()) {
-                    SpecialIdentifiers.Add(new JProperty("UserFullDisplayName", User.UserInfo.Name));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", User.UserInfo.Name));
                 } else {
-                    SpecialIdentifiers.Add(new JProperty("UserFullDisplayName", $"{User.UserInfo.Name} ({UserName})"));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", $"{User.UserInfo.Name} ({UserName})"));
                 }
                 if (User.IsModerator) {
-                    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Moderator"));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserPrimaryRole", "Moderator"));
                 } else if (User.IsSubscriber) {
-                    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Subscriber"));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserPrimaryRole", "Subscriber"));
                     //} else if (User.IsFollower) {
                     //    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Follower"));
                 }
 
                 if (User.ChannelInfo != null && User.ChannelInfo.Stream != null) {
-                    SpecialIdentifiers.Add(new JProperty("UserStreamTitle", User.ChannelInfo.Stream.Title));
-                    SpecialIdentifiers.Add(new JProperty("UserStreamIsLive", User.ChannelInfo.Stream.IsLive.ToString()));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamTitle", User.ChannelInfo.Stream.Title));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamIsLive", User.ChannelInfo.Stream.IsLive.ToString()));
                     if (User.ChannelInfo.Stream.Game != null) {
-                        SpecialIdentifiers.Add(new JProperty("UserStreamGame", User.ChannelInfo.Stream.Game.Name));
-                        SpecialIdentifiers.Add(new JProperty("UserStreamGameName", User.ChannelInfo.Stream.Game.Name));
-                        SpecialIdentifiers.Add(new JProperty("UserStreamGameImage", User.ChannelInfo.Stream.Game.CoverUrl));
+                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGame", User.ChannelInfo.Stream.Game.Name));
+                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGameName", User.ChannelInfo.Stream.Game.Name));
+                        SpecialIdentifiers.Add(new JProperty($"{Prefix}UserStreamGameImage", User.ChannelInfo.Stream.Game.CoverUrl));
                     }
                 }
             }
@@ -216,8 +227,20 @@ namespace FoxedItUp {
         internal List<string> TriggerNames = new List<string>();
         internal async Task RunCommand(string Arguments, string SpoofPlatform, Author User) {
             if (AllowUser || (User.Roles.Broadcaster && AllowStreamer) || (User.Roles.Moderator && AllowModerator)) {
-
                 JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
+                if (!String.IsNullOrEmpty(Arguments)) {
+                    string TargetUser;
+                    int n = Arguments.IndexOf(' ');
+                    if (n > 0) {
+                        TargetUser = Arguments.Substring(n - 1);
+                    } else {
+                        TargetUser = Arguments;
+                    }
+                    JObject TargetSpecialIdentifiers = DefaultSpecialIdentifiers(TargetUser, "Target");
+                    if (TargetSpecialIdentifiers != null) {
+                        SpecialIdentifiers.Merge(TargetSpecialIdentifiers);
+                    }
+                }
                 await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
             } else {
                 Log($"No permission for {User.ChannelName} to run this");
@@ -238,9 +261,12 @@ namespace FoxedItUp {
     }
 
     internal class MIURedeemCommand : MIUCommandBase {
-        internal async Task RunCommand(string RedeemMessage, string SpoofPlatform, Author User) {
+        internal async Task RunCommand(string RedeemMessage, string SpoofPlatform, Author User, string RedeemID=null) {
             JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User.ChannelName);
             SpecialIdentifiers.Add(new JProperty("Message", RedeemMessage));
+            if (!String.IsNullOrEmpty(RedeemID)) {
+                SpecialIdentifiers.Add(new JProperty("AltRedeemID", RedeemID));
+            }
             await _RunCommand("", SpoofPlatform, SpecialIdentifiers);
         }
         internal MIURedeemCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
