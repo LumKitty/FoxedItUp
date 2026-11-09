@@ -1,12 +1,13 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using AltStreamLib.Logging;
 using FoxedItUp;
 using System;
 using System.IO;
-using System.Reflection;
-using static FoxedItUp.Functions;
-using static FoxedItUp._Settings;
 using System.Linq;
-using AltStreamLib.Logging;
+using System.Reflection;
+using System.Threading;
+using static FoxedItUp._Settings;
+using static FoxedItUp.Functions;
 
 namespace FoxedItUp {
     static class FoxedItUp {
@@ -74,8 +75,8 @@ updatecommand");
             }
 
             Log("");
-            Log("Press ENTER to exit");
-            Console.ReadLine();
+            Log($"Call http://localhost:{Settings.HttpPort}/fiu/quit to terminate this application, or press Ctrl + C");
+            Functions.QuitSignal.WaitOne();
             return 0;
         }
     }

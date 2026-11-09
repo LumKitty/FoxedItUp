@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using static FoxedItUp._Settings;
 
 namespace FoxedItUp {
@@ -11,6 +12,8 @@ namespace FoxedItUp {
         internal static System.Version version = Assembly.GetExecutingAssembly().GetName().Version;
         private static readonly string WindowTitle = $"FoxedItUp {version}"; 
         private static AltStreamLib.Logging.Logger logger = new AltStreamLib.Logging.Logger();
+        internal static AutoResetEvent QuitSignal = new AutoResetEvent(false);
+
 
         internal static void AltStreamLibLogInit() {
             logger.OnLog += Logger_OnLog;
@@ -71,6 +74,18 @@ namespace FoxedItUp {
         }
         internal static string GetBotToken() {
             return Settings.BotToken;
+        }
+        internal static void Quit() {
+            if (Settings.EnableUnofficialEvents) {
+                Log("Stopping unofficial event polling");
+                AltStream_Unofficial.Disconnect();
+            }
+            Log("Stopping HTTP server");
+            HTTPServer.Stop();
+            Log("Disconnecting AltEventClient");
+            AltStream.Disconnect();
+
+            QuitSignal.Set();
         }
     }
 }

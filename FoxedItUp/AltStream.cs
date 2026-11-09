@@ -78,6 +78,11 @@ namespace FoxedItUp {
             }
         }
 
+        internal static void Disconnect() {
+            AltEventClient.DisconnectAsync().GetAwaiter().GetResult();
+            AltAPI.Dispose();
+        }
+
         internal static AltStreamUserInfo GetBasicUserInfo(string UserName) {
 
             AltStreamUserInfo User = new AltStreamUserInfo();

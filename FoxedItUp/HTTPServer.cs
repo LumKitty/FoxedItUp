@@ -32,7 +32,7 @@ namespace FoxedItUp {
 
         internal static void Stop() {
             StopServer = true;
-            ListenerTask.Dispose();
+            //ListenerTask.Dispose();
             Listener.Stop();
         }
 
@@ -74,6 +74,13 @@ namespace FoxedItUp {
                                     AltStream.CompleteRedeem(Body, true);
                                 }
                                 Result = 200;
+                                break;
+                        }
+                        break;
+                    case "get":
+                        switch (Request.Url.AbsolutePath.ToLower()) {
+                            case "/fiu/quit":
+                                Functions.Quit();
                                 break;
                         }
                         break;

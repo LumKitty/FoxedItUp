@@ -26,6 +26,10 @@ namespace FoxedItUp {
             PollTimer.Start();
         }
 
+        internal static void Disconnect() {
+            PollTimer.Stop();
+        }
+
         private static async void PollTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
             try {
                 //Log("Polling for activity");
