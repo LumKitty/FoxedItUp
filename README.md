@@ -91,19 +91,22 @@ TargetUser____ special identifiers are send if the first word of a chat command 
 
 ### HTTP server - for sending from MIU to AltStream
 
-Currently there are three endpoints:  
-http://localhost:41757/alt/chat  
+Currently there are four endpoints:  
+http://localhost:41757/alt/chat - Send a chat message  
 Method: Post  
 Body: Message to send  
 
-http://localhost:41757/alt/shoutout  
+http://localhost:41757/alt/shoutout - Shoutout a user  
 Method: Post  
 Body: Username to Shoutout  
 
-http://localhost:41757/alt/redeem  
+http://localhost:41757/alt/redeem - Mark redeem as fulfilled  
 or http://localhost:41757/alt/redeem?refund=true  
 Method: Put  
 Body: ID of redeem to mark as fulfilled (or refunded)  
+
+http://localhost:41757/fiu/quit - Quit the application  
+Method: Get  
 
 ### Credits
 Uses [AltStreamLib](https://github.com/MachaCeleste/AltStreamLib) by [MachaCeleste](https://altstream.online/machaceleste)  
