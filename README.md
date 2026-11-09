@@ -120,7 +120,7 @@ Give me a follow on [AltStream](https://altstream.online/LumKitty) or [Twitch](h
 ### Start FoxedItUp with MixItUp
 <img width="804" height="687" alt="image" src="https://github.com/user-attachments/assets/09a15268-a096-450a-89e1-815c0da40ec0" />
 
-### Shutdown FoxedItUp when MixItUpExits
+### Shutdown FoxedItUp when MixItUp exits
 <img width="799" height="515" alt="image" src="https://github.com/user-attachments/assets/065318a4-2555-42ff-b37f-6fa9255be016" />
 
 
