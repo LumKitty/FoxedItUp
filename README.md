@@ -39,6 +39,8 @@ For the mainline release the only way to remain secure is to ban all !commands t
 the MixItUp pre-made commands that are mod-only, but if you have made any custom commands, you will need to add them here and actually test that
 they get banned. I will not be held responsible if a rando runs your !endstream command or whatever. You have been warned!
 
+You should also ban any commands that use currency/inventory, see the next section for why
+
 ### Issues with MIU currency/inventory and actions that refer to the calling user
 Because we're spoofing twitch. If an altstream user doesn't have a twitch account with an identical name, then as far as MIU is concerned they
 don't exist. Where users do exist, I would need to look them up by name and provide the MIU ID for them in order for certain commands to work.
@@ -87,7 +89,7 @@ I recommend simply not using these types of commands. The most common example is
 ```UserPatreonTier```  
 ```UserNotes```
 
-TargetUser____ special identifiers are send if the first word of a chat command is a recognised user name
+TargetUser____ special identifiers are sent if the first word of a chat command is a recognised user name on AltStream
 
 ### HTTP server - for sending from MIU to AltStream
 
