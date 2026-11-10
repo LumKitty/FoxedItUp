@@ -21,6 +21,15 @@ namespace FoxedItUp {
         public bool ParseChannelPointsFromKick = false;
         public bool ParseChannelPointsFromVelora = false;
         public bool ParseChannelPointsFromVPZone = false;
+        public string LocalNameForChat = "chat";
+        public string LocalNameForPreMade = "pre-made";
+        public string LocalNameForEvent = "event";
+        public string LocalNameForTimer = "timer";
+        public string LocalNameForTwitchChannelPoints = "twitch channel points";
+        public string LocalNameForKickChannelPoints = "kick channel points";
+        public string LocalNameForVeloraChannelPoints = "velora channel points";
+        public string LocalNameForVPZoneChannelPoints = "vpzone channel points";
+        
         public bool ShowAltStreamLibMessages = false;
         public bool ShowAltStreamLibPingMessages = false;
         public bool ShowAltStreamChatMessages = true;
