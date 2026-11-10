@@ -89,7 +89,7 @@ I recommend simply not using these types of commands. The most common example is
 ```UserPatreonTier```  
 ```UserNotes```
 
-TargetUser____ special identifiers are send if the first word of a chat command is a recognised user name
+TargetUser____ special identifiers are sent if the first word of a chat command is a recognised user name on AltStream
 
 ### HTTP server - for sending from MIU to AltStream
 
