@@ -17,7 +17,6 @@ namespace FoxedItUp {
         public string ReadCommandPermissionsFrom = "Twitch";
         public bool EnableUnofficialEvents = false;
         public bool IncludeAccountAgeAndGameInfo = false;
-        public bool APISubFlipWorkaround = true;
         public bool ParseChannelPointsFromTwitch = true;
         public bool ParseChannelPointsFromKick = false;
         public bool ParseChannelPointsFromVelora = false;

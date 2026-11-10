@@ -6,7 +6,7 @@
     <StartupObject>FoxedItUp.FoxedItUp</StartupObject>
     <Version />
     <!-- <Title>0.2.7</Title> -->
-    <VersionPrefix>0.3.4</VersionPrefix>
+    <VersionPrefix>0.3.5</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <Reference Include="AltStreamLib">
-      <HintPath>..\..\Libs\AltStreamLib-v0.4.21-net481\AltStreamLib.dll</HintPath>
+      <HintPath>..\..\Libs\AltStreamLib-v0.4.22-net481\AltStreamLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 

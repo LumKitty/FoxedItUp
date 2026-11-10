@@ -106,11 +106,7 @@ namespace FoxedItUp {
             //Log(JsonConvert.SerializeObject(User.UserInfo, Formatting.Indented));
 
             if (Moderators.Contains(UserName.ToLower())) { User.IsModerator = true; }
-            if (Settings.APISubFlipWorkaround) {
-                User.IsSubscriber = false;
-            } else {
-                User.IsSubscriber = User.UserInfo.IsSubscriber;
-            }
+            User.IsSubscriber = User.UserInfo.IsSubscriber;
             //User.IsFollower = !String.IsNullOrEmpty(User.UserInfo.FollowedAt);
             User.IsStreamer = (UserName.ToLower() == Settings.ChannelName.ToLower());
             User.FetchedAt = DateTime.UtcNow;
@@ -138,7 +134,7 @@ namespace FoxedItUp {
                     Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
                 }
                 Kofi DonationEvent = obj.Kofi;
-                Log($"* {obj.Author.ChannelName} Donated {DonationEvent.CurrencyCode}{DonationEvent.Amount} - {DonationEvent.Message}");
+                Log($"* {obj.Author.ChannelName} ({obj.Author.DisplayName}) Donated {DonationEvent.CurrencyCode}{DonationEvent.Amount} - {DonationEvent.Message}");
            
                 if (MixItUpClient.ChannelDonation != null) {
                     await MixItUpClient.ChannelDonation.RunCommand(DonationEvent.Message, Settings.SpoofPlatform, obj.Author, DonationEvent.CurrencyCode, DonationEvent.Amount);
@@ -155,7 +151,7 @@ namespace FoxedItUp {
                     Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
                 }
                 Kofi SubEvent = obj.Kofi;
-                Log($"* {obj.Author.ChannelName} subscribed at {SubEvent.TierName}");
+                Log($"* {obj.Author.ChannelName} ({obj.Author.DisplayName}) subscribed at {SubEvent.TierName}");
 
                 if (SubEvent.IsFirstSubscriptionPayment) {
                     if (MixItUpClient.ChannelSubscribed != null) {
@@ -223,7 +219,7 @@ namespace FoxedItUp {
                     Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
                 }
                 Raid RaidEvent = obj.Raid;
-                Log($"* {RaidEvent.From} raided with {RaidEvent.Viewers}");
+                Log($"* {RaidEvent.From.ChannelName} ({RaidEvent.From.DisplayName}) raided with {RaidEvent.Viewers}");
                 if (MixItUpClient.ChannelRaided != null) {
                     await MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, RaidEvent.From, RaidEvent.Viewers);
                 }
@@ -319,13 +315,13 @@ namespace FoxedItUp {
 
         internal static async void SendChat(string Message) {
             Log($"Sending chat message {Message}");
-            await AltAPI.SendChatMessageAsync(ChannelName, Message);  // Not working in AltStreamLib currently
-            /*
+            //await AltAPI.SendChatMessageAsync(ChannelName, Message);  // Not working in AltStreamLib currently
+            
             await httpRequest.HttpRequest("POST", "https://altstream.online/api/v2/chat", new JObject(
                 new JProperty("channel", ChannelName),
                 new JProperty("message", Message)
             ).ToString(), Settings.BotToken);
-            */
+            
         }
         internal static async void ShoutOut(string UserName) {
             Log($"Sending shoutout for {UserName}");
@@ -340,23 +336,23 @@ namespace FoxedItUp {
         internal static async void CompleteRedeem(string ID, bool Fulfilled=true) {
             int intID;
             if (int.TryParse(ID, out intID)) {
-                
+                /*
                 JObject Message = new JObject(
                     new JProperty("channel", ChannelName),
                     new JProperty("id", intID)
                  );
-                
+                */
                 if (Fulfilled) {
                     Log($"Fulfilling redeem {intID}");
-                //    await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Fulfill);
-                    Message.Add(new JProperty("status", "fulfilled"));
+                    await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Fulfill);
+                    //Message.Add(new JProperty("status", "fulfilled"));
                 } else {
                     Log($"Refunding redeem {intID}");
-                //    await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Refund);
-                    Message.Add(new JProperty("status", "refunded"));
+                    await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Refund);
+                    //Message.Add(new JProperty("status", "refunded"));
                 }
                 //Log(Message.ToString());
-                await httpRequest.HttpRequest("PATCH", "https://altstream.online/api/v2/rewards/redemptions", Message.ToString(), Settings.BotToken);
+                //await httpRequest.HttpRequest("PATCH", "https://altstream.online/api/v2/rewards/redemptions", Message.ToString(), Settings.BotToken);
             }
         }
     }
