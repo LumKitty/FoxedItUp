@@ -21,7 +21,7 @@ namespace FoxedItUp {
         internal bool IsStreamer = false;
         internal bool IsModerator = false;
         internal bool IsSubscriber = false;
-        //internal bool IsFollower = false;          /* borked at API level
+        internal bool IsFollower = false;          /* borked at API level */
         internal DateTime FetchedAt = new DateTime(0);
         //internal DateTime FollowedAt = new DateTime(0);
         internal DateTime CreatedAt = new DateTime(0);

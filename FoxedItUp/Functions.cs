@@ -14,7 +14,6 @@ namespace FoxedItUp {
         private static AltStreamLib.Logging.Logger logger = new AltStreamLib.Logging.Logger();
         internal static AutoResetEvent QuitSignal = new AutoResetEvent(false);
 
-
         internal static void AltStreamLibLogInit() {
             logger.OnLog += Logger_OnLog;
         }

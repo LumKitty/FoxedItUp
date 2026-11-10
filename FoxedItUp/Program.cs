@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using static FoxedItUp._Settings;
 using static FoxedItUp.Functions;
@@ -18,6 +19,7 @@ namespace FoxedItUp {
             bool SettingsOK = true;
 
             SetWindowTitle("init");
+            Console.OutputEncoding = Encoding.UTF8;
 
             SettingsFile.Load(JsonFile);
             SettingsFile.Save(JsonFile);

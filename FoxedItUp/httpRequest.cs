@@ -14,7 +14,7 @@ namespace FoxedItUp {
         private static HttpClient client = new HttpClient();
         internal static async Task<string> HttpRequest(string Method, string URL, string Content, string Authorization=null) {
             try {
-                var jsonData = new StringContent(Content, Encoding.ASCII);
+                var jsonData = new StringContent(Content, Encoding.UTF8);
                 jsonData.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                 if (!String.IsNullOrEmpty(Authorization)) {
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Authorization);
