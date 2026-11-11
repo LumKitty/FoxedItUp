@@ -64,14 +64,13 @@ I recommend simply not using these types of commands. The most common example is
 ```UserLastSeenPrecise```  
 ```UserFollowAge```    - Unavailable in upstream API  
 ```UserFollowDays```  
-```UserFollowMonths```
+```UserFollowMonths```  
 ```UserFollowYears```  
 ```UserSubAge```       - We don't have this info in AltStream  
 ```UserSubMonths```  
 ```UserSubTier```      - I don't think this exists on AltStream?  
 ```UserSubBadge```     - Maybe possible need to check API  
 ```UserInChat```       - Not tracking users  
-```UserIsFollower```   - Unavailable in upstream API  
 ```UserIsRegular```    - Not tracking users  
 ```UserIsVIP```        - I don't think this exists either  
 ```UserIsSpecialityExcluded``` - MIU-specific  
