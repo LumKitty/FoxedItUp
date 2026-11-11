@@ -1,5 +1,6 @@
 ﻿using AltStreamLib.Api.Chat.Models;
 using AltStreamLib.Api.v1.Models;
+using AltStreamLib.Api.v2.Models;
 using AltStreamLib.EventSub;
 using AltStreamLib.EventSub.Chat.Models;
 using Newtonsoft.Json;
@@ -16,7 +17,7 @@ using static FoxedItUp.Functions;
 
 namespace FoxedItUp {
     internal class AltStreamUserInfo {
-        internal UserSettingsResponse UserInfo = null;
+        internal User UserInfo = null;
         internal ChannelResponse ChannelInfo = null;
         internal bool IsStreamer = false;
         internal bool IsModerator = false;
@@ -93,7 +94,7 @@ namespace FoxedItUp {
             }
             User = new AltStreamUserInfo();
 
-            User.UserInfo = AltAPI.GetUserSettingsInfoAsync(UserName).GetAwaiter().GetResult();
+            User.UserInfo = AltAPI.GetUserInfoAsync(UserName).GetAwaiter().GetResult();
             if (Settings.IncludeAccountAgeAndGameInfo) {
                 User.ChannelInfo = AltAPI.GetChannelInfoAsync(UserName).GetAwaiter().GetResult();
             } else {
@@ -105,16 +106,17 @@ namespace FoxedItUp {
 
             //Log(JsonConvert.SerializeObject(User.UserInfo, Formatting.Indented));
 
-            if (Moderators.Contains(UserName.ToLower())) { User.IsModerator = true; }
-            User.IsSubscriber = User.UserInfo.IsSubscriber;
-            //User.IsFollower = !String.IsNullOrEmpty(User.UserInfo.FollowedAt);
-            User.IsStreamer = (UserName.ToLower() == Settings.ChannelName.ToLower());
+            //if (Moderators.Contains(UserName.ToLower())) { User.IsModerator = true; }
+            User.IsSubscriber = User.UserInfo.Roles.ChannelSubscriber;
+            User.IsModerator = User.UserInfo.Roles.Moderator;
+            User.IsFollower = User.UserInfo.Roles.Follower;
+            User.IsStreamer = User.UserInfo.Roles.Broadcaster;
             User.FetchedAt = DateTime.UtcNow;
 
             if (User.UserInfo != null) {
-                if (User.UserInfo.FollowedAt != null) {
+                //if (User.UserInfo. != null) {
                     //User.FollowedAt = Newtonsoft.Json.JsonConvert.DeserializeObject<DateTime>(User.UserInfo.FollowedAt);
-                }
+                //}
                 if (User.UserInfo.CreatedAt != null) {
                     //Log($"User created at raw: {User.UserInfo.CreatedAt}");
                     User.CreatedAt = DateTime.Parse(User.UserInfo.CreatedAt);

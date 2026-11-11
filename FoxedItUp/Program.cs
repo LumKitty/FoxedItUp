@@ -28,13 +28,30 @@ namespace FoxedItUp {
                 Log("");
                 Log($"BanList file not found. Creating {BanListFile}");
                 File.WriteAllText(BanListFile, @"addcommand
+addquote
+commands
 deletequote
 disablecommand
+followage
+game
+games
+lastquote
+linkaccount
+magic8ball
+mixitup
+mixitupcommands
+quote
 setgame
 settitle
 setusertitle
 startgiveaway
-updatecommand");
+steamgame
+streamerage
+subscribeage
+title
+updatecommand
+uptime
+xboxgame");
                 Log("");
                 Log("Please review this file and enter any commands that you do not want available");
                 Log("to general users. MixItUp does not give me information on who has permission");

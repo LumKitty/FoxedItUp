@@ -52,21 +52,21 @@ namespace FoxedItUp {
                 }
 
                 List<string> Roles = new List<string>();
-                //if (User.IsFollower) { Roles.Add("Follower"); }
                 
                 if (User.IsSubscriber) { Roles.Add("Subscriber"); }
                 if (User.IsModerator) { Roles.Add("Moderator"); }
+                if (User.IsFollower) { Roles.Add("Follower"); }
                 if (User.IsStreamer) { Roles.Add("Streamer"); }
 
                 SpecialIdentifiers = new JObject(
-                    new JProperty($"{Prefix}UserName", User.UserInfo.Username),
-                    new JProperty($"{Prefix}UserDisplayName", User.UserInfo.Name),
-                    new JProperty($"{Prefix}UserColor", User.UserInfo.ChatColor),
-                    new JProperty($"{Prefix}User{Settings.SpoofPlatform}Color", User.UserInfo.ChatColor),
+                    new JProperty($"{Prefix}UserName", User.UserInfo.ChannelName),
+                    new JProperty($"{Prefix}UserDisplayName", User.UserInfo.DisplayName),
+                    new JProperty($"{Prefix}UserColor", User.UserInfo.Color),
+                    new JProperty($"{Prefix}User{Settings.SpoofPlatform}Color", User.UserInfo.Color),
                     new JProperty($"{Prefix}UserAvatar", HandleRelativePaths(User.UserInfo.Image)),
                     new JProperty($"{Prefix}UserURL", $"https://altstream.online/{UserName}"),
                     new JProperty($"{Prefix}UserIsSubscriber", User.IsSubscriber.ToString()), //Yes, really
-                                                                                              //new JProperty($"{Prefix}UserIsFollower", User.IsFollower.ToString()),
+                    new JProperty($"{Prefix}UserIsFollower", User.IsFollower.ToString()),
                     new JProperty($"{Prefix}UserIsMod", User.IsModerator.ToString()),
                     new JProperty($"{Prefix}UserRoles", String.Join(", ", Roles)),
                     //new JProperty($"{Prefix}UserFollowAge", FollowAge.ToString()),
@@ -76,10 +76,10 @@ namespace FoxedItUp {
 
                 if (String.IsNullOrEmpty(Prefix)) { SpecialIdentifiers.Add(new JProperty($"{Prefix}PlatformEx", RealPlatform)); }
 
-                if (User.UserInfo.Username.ToLower() == User.UserInfo.Name.ToLower()) {
-                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", User.UserInfo.Name));
+                if (User.UserInfo.ChannelName.ToLower() == User.UserInfo.DisplayName.ToLower()) {
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", User.UserInfo.ChannelName));
                 } else {
-                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", $"{User.UserInfo.Name} ({UserName})"));
+                    SpecialIdentifiers.Add(new JProperty($"{Prefix}UserFullDisplayName", $"{User.UserInfo.ChannelName} ({UserName})"));
                 }
                 if (User.IsStreamer) {
                     SpecialIdentifiers.Add(new JProperty($"{Prefix}UserPrimaryRole", "Streamer"));
@@ -117,19 +117,20 @@ namespace FoxedItUp {
                 //TimeSpan FollowAge;
 
                 List<string> Roles = new List<string>();
-                //if (User.IsFollower) { Roles.Add("Follower"); }
+                
                 if (User.Roles.ChannelSubscriber) { Roles.Add("Subscriber"); }
                 if (User.Roles.Moderator) { Roles.Add("Moderator"); }
+                if (User.Roles.Follower) { Roles.Add("Follower"); }
 
                 SpecialIdentifiers = new JObject(
                     new JProperty($"{Prefix}UserName", User.ChannelName),
-                    
+
                     new JProperty($"{Prefix}UserColor", User.Color),
                     new JProperty($"{Prefix}User{Settings.SpoofPlatform}Color", User.Color),
                     new JProperty($"{Prefix}UserAvatar", HandleRelativePaths(User.Image)),
                     new JProperty($"{Prefix}UserURL", $"https://altstream.online/{User.ChannelName}"),
                     new JProperty($"{Prefix}UserIsSubscriber", User.Roles.ChannelSubscriber.ToString()), //Yes, really
-                    //new JProperty($"{Prefix}UserIsFollower", User.IsFollower.ToString()),
+                    new JProperty($"{Prefix}UserIsFollower", User.Roles.Follower.ToString()),
                     new JProperty($"{Prefix}UserIsMod", User.Roles.Moderator.ToString()),
                     new JProperty($"{Prefix}UserRoles", String.Join(", ", Roles)),
                     new JProperty($"{Prefix}PlatformEx", RealPlatform),
@@ -168,11 +169,9 @@ namespace FoxedItUp {
                     SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Moderator"));
                 } else if (User.Roles.ChannelSubscriber) {
                     SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Subscriber"));
-                    //} else if (User.IsFollower) {
-                    //    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Follower"));
+                } else if (User.Roles.Follower) {
+                    SpecialIdentifiers.Add(new JProperty("UserPrimaryRole", "Follower"));
                 }
-
-                
             }
 
             return SpecialIdentifiers;
@@ -231,9 +230,10 @@ namespace FoxedItUp {
         internal bool AllowStreamer = true;
         internal bool AllowModerator = true;
         internal bool AllowSubscriber = true;
+        internal bool AllowFollower = true;
         internal List<string> TriggerNames = new List<string>();
         internal async Task RunCommand(string Arguments, string SpoofPlatform, Author User) {
-            if (AllowUser || (User.Roles.Broadcaster && AllowStreamer) || (User.Roles.Moderator && AllowModerator) || (User.Roles.ChannelSubscriber && AllowSubscriber)) {
+            if (AllowUser || (User.Roles.Broadcaster && AllowStreamer) || (User.Roles.Moderator && AllowModerator) || (User.Roles.ChannelSubscriber && AllowSubscriber) || (User.Roles.Follower && AllowFollower)) {
                 JObject SpecialIdentifiers = DefaultSpecialIdentifiers(User);
                 if (!String.IsNullOrEmpty(Arguments)) {
                     string TargetUser;
@@ -370,14 +370,19 @@ namespace FoxedItUp {
                                                         TempChatCommand.AllowStreamer = true;
                                                         break;
                                                     case "moderator":
+                                                        TempChatCommand.AllowStreamer = true;
+                                                        TempChatCommand.AllowModerator = true;
+                                                        break;
                                                     case "regular":
                                                     case "follower":
                                                         TempChatCommand.AllowStreamer = true;
                                                         TempChatCommand.AllowModerator = true;
+                                                        TempChatCommand.AllowFollower = true;
                                                         break;
                                                     case "user":
                                                         TempChatCommand.AllowStreamer = true;
                                                         TempChatCommand.AllowModerator = true;
+                                                        TempChatCommand.AllowFollower = true;
                                                         TempChatCommand.AllowUser = true;
                                                         break;
                                                     case "banned":
@@ -385,6 +390,7 @@ namespace FoxedItUp {
                                                             switch (Role.ToString().ToLower()) {
                                                                 case "streamer": TempChatCommand.AllowStreamer = true; break;
                                                                 case "moderator": TempChatCommand.AllowModerator = true; break;
+                                                                case "follower": TempChatCommand.AllowFollower = true; break;
                                                                 case "user": TempChatCommand.AllowUser = true; break;
                                                             }
                                                         }
