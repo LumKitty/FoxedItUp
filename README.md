@@ -22,10 +22,12 @@ Any channel point redeems must have the exact same name on AltStream as they do 
 
 Raid, Follow, Tip & Sub alerts must use the Generic -> "Channel Raided" event in MIU, not the "Twitch Channel Raided" event.  
 
-Follow alerts use unofficial APIs. Only enable the unofficial API feature if you need this specific event as it causes polling to happen and could easily be broken by a site update.  
-
 Events fired from FIU should set $PlatformEx = AltStream. You can check for that before responding on Twitch, for example  
 Redeem events set $AltRedeemID. This can be used to automatically mark redeems as complete (see the HTTP server section below)
+
+### Known issues
+- Follow alerts not currently working as this was changed to require a stream key
+- Versions later than 0.2.8 cannot auth if you have "Require Login to Watch" set. Please stick with 0.2.8 if you need this feature enabled. Unfortunately you will not be able to use any of the newer features until this is resolved server-side  
 
 ### Security Warning (BanList.txt)
 The current public release of MixItUp does not give me visibility of any permissions you have set on commands, and the dev API bypasses permissions anyway. 
