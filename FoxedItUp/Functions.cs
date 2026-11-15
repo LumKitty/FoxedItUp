@@ -21,7 +21,7 @@ namespace FoxedItUp {
 
         private static void Logger_OnLog(LogMessage obj) {
             if (Settings.LogLevel < 6 && obj.Message == "PING") { return; }
-            Log ($"AltStreamLib: {obj.Message}",3);
+            Log ($"AltStreamLib: {obj.Message}",69);
         }
 
         internal static void Output (string Message) {
