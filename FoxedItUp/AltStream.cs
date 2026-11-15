@@ -34,8 +34,9 @@ namespace FoxedItUp {
         private static bool Connected = false;
         internal static EventSubClient AltEventClient;
         internal static Dictionary<string, AltStreamUserInfo> UserInfoCache = new Dictionary<string, AltStreamUserInfo>();
-        internal static List<String> Moderators = new List<string>();
+        //internal static List<String> Moderators = new List<string>();
          
+        /*
         internal static async Task UpdateModerators(string ChannelName) {
             List<string> TempModerators = new List<string>();
             Log($"Looking up moderators for: {ChannelName}");
@@ -46,20 +47,21 @@ namespace FoxedItUp {
             }
             if (TempModerators.Count > 0) { Moderators = TempModerators; }
         }
-        
+        */
         
         internal static void Connect(string _ChannelName) {
             try {
                 SetWindowTitle("Connecting");
                 ChannelName = _ChannelName;
 
-                AltEventClient = new EventSubClient(ChannelName, GetBotToken());
+                Log($"Connecting as '{Settings.ChannelName}' using token '{Settings.BotToken}'", 69);
+                AltEventClient = new EventSubClient(Settings.ChannelName, Settings.BotToken);
                 AltEventClient.OnMessageReceived += AltEventClient_OnMessageReceived;
                 AltEventClient.OnHighlightReceived += AltEventClient_OnHighlightReceived;
 
                 AltEventClient.OnRaidReceived += AltEventClient_OnRaidReceived;
                 AltEventClient.OnRedemptionReceived += AltEventClient_OnRedemptionReceived;
-                // AltEventClient.OnFollowReceived += AltEventClient_OnFollowReceived;
+                AltEventClient.OnFollowReceived += AltEventClient_OnFollowReceived;
                 AltEventClient.OnSubscriptionReceived += AltEventClient_OnSubscriptionReceived;
                 AltEventClient.OnTipReceived += AltEventClient_OnTipReceived;
 
@@ -69,7 +71,7 @@ namespace FoxedItUp {
                 AltEventClient.OnTimeout += AltEventClient_OnTimeout;
                 AltEventClient.OnDisconnected += AltEventClient_OnDisconnected;
 
-                Log("Connecting to AltStream");
+                Output("Connecting to AltStream");
                 AltEventClient.ConnectAsync().Wait();
 
                 AltAPI = new AltStreamLib.Api.ApiClient(Settings.BotToken);
@@ -100,8 +102,8 @@ namespace FoxedItUp {
             } else {
                 User.ChannelInfo = null;
             }
-            if (Settings.ShowRandomJSON) {
-                Log(Newtonsoft.Json.JsonConvert.SerializeObject(User.ChannelInfo));
+            if (Settings.LogLevel >= 6) {
+                Log(Newtonsoft.Json.JsonConvert.SerializeObject(User.ChannelInfo), 6);
             }
 
             //Log(JsonConvert.SerializeObject(User.UserInfo, Formatting.Indented));
@@ -131,12 +133,12 @@ namespace FoxedItUp {
         
         private static async void AltEventClient_OnTipReceived(Data obj) {
             try { 
-                Log("Subscription received");
-                if (Settings.ShowRandomJSON) {
-                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+                Output("Subscription received");
+                if (Settings.LogLevel >= 6) {
+                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj), 6);
                 }
                 Kofi DonationEvent = obj.Kofi;
-                Log($"* {obj.Author.ChannelName} ({obj.Author.DisplayName}) Donated {DonationEvent.CurrencyCode}{DonationEvent.Amount} - {DonationEvent.Message}");
+                Output($"* {obj.Author.ChannelName} ({obj.Author.DisplayName}) Donated {DonationEvent.CurrencyCode}{DonationEvent.Amount} - {DonationEvent.Message}");
            
                 if (MixItUpClient.ChannelDonation != null) {
                     await MixItUpClient.ChannelDonation.RunCommand(DonationEvent.Message, Settings.SpoofPlatform, obj.Author, DonationEvent.CurrencyCode, DonationEvent.Amount);
@@ -148,12 +150,12 @@ namespace FoxedItUp {
 
         private static async void AltEventClient_OnSubscriptionReceived(Data obj) {
             try {
-                Log("Subscription received");
-                if (Settings.ShowRandomJSON) {
-                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+                Output("Subscription received");
+                if (Settings.LogLevel >= 6) {
+                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj), 6);
                 }
                 Kofi SubEvent = obj.Kofi;
-                Log($"* {obj.Author.ChannelName} ({obj.Author.DisplayName}) subscribed at {SubEvent.TierName}");
+                Output($"* {obj.Author.ChannelName} ({obj.Author.DisplayName}) subscribed at {SubEvent.TierName}");
 
                 if (SubEvent.IsFirstSubscriptionPayment) {
                     if (MixItUpClient.ChannelSubscribed != null) {
@@ -168,46 +170,43 @@ namespace FoxedItUp {
                 ErrorHandler(Ex);
             }
         }
-        /* Will be available in a future version of AltStreamLib
-        private static void AltEventClient_OnFollowReceived(EventMessage obj) {
+        private static async void AltEventClient_OnFollowReceived(Data obj) {
             try {
 
-                Log("Follow received");
-                Log($"* {obj.Context.AuthorUsername} followed");
+                Output($"* {obj.FollowedBy.DisplayName} ({obj.Author.ChannelName}) followed");
 
                 if (MixItUpClient.ChannelFollowed != null) {
-                    MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, obj.Context.AuthorUsername);
+                    await MixItUpClient.ChannelFollowed.RunCommand("", Settings.SpoofPlatform, obj.FollowedBy);
                 }
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
             }
         }
-        */
 
         private static void AltEventClient_OnUnhandledReceived(Data obj) {
-            Log("Unrecognised Event:");
-            if (Settings.ShowRandomJSON) {
-                Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+            Output("Unrecognised Event:");
+            if (Settings.LogLevel >= 1) {
+                Output(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
             }
-            Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
         }
         
         private static async void AltEventClient_OnRedemptionReceived(Data obj) {
             try {
-                if (Settings.ShowRandomJSON) {
-                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+                if (Settings.LogLevel >= 6) {
+                    Output(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
                 }
-                Redemption RedeemEvent = obj.Redemption;
-                Log($"* {RedeemEvent.From.ChannelName} ({RedeemEvent.From.DisplayName}) redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
+                AltStreamLib.EventSub.Chat.Models.Redemption RedeemEvent = obj.Redemption;
+
+                Output($"* {RedeemEvent.From.ChannelName} ({RedeemEvent.From.DisplayName}) redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}");
 
                 string PointsName = RedeemEvent.RewardName.ToLower();
-                Log($"Attempting to run command {PointsName}");
+                Output($"Attempting to run command {PointsName}");
                 MIURedeemCommand PointsCommand = MixItUpClient.MIUChannelPoints.FirstOrDefault(i => (i.Name == PointsName));
                 if (PointsCommand != null) {
-                    Log($"Attempting to run command: {PointsCommand.ID}");
+                    Output($"Attempting to run command: {PointsCommand.ID}");
                     await PointsCommand.RunCommand(RedeemEvent.UserInput, Settings.SpoofPlatform, RedeemEvent.From, RedeemEvent.Id);
                 } else {
-                    Log("Could not find command");
+                    Output("Could not find command");
                 }
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
@@ -217,11 +216,11 @@ namespace FoxedItUp {
 
         private static async void AltEventClient_OnRaidReceived(Data obj) {
             try {
-                if (Settings.ShowRandomJSON) {
-                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+                if (Settings.LogLevel >= 6) {
+                    Output(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
                 }
                 Raid RaidEvent = obj.Raid;
-                Log($"* {RaidEvent.From.ChannelName} ({RaidEvent.From.DisplayName}) raided with {RaidEvent.Viewers}");
+                Output($"* {RaidEvent.From.ChannelName} ({RaidEvent.From.DisplayName}) raided with {RaidEvent.Viewers}");
                 if (MixItUpClient.ChannelRaided != null) {
                     await MixItUpClient.ChannelRaided.RunCommand("", Settings.SpoofPlatform, RaidEvent.From, RaidEvent.Viewers);
                 }
@@ -237,39 +236,41 @@ namespace FoxedItUp {
 
                 if (!string.IsNullOrEmpty(Context.Message.Text)) {
                     if (Context.Message.Text.Substring(0, 1) == "!") {
-                        Log($"Received command message {Context.Message.Text}");
+                        Output($"Received command message {Context.Message.Text}");
                         int n = Context.Message.Text.IndexOf(' ');
-                        Log($"Index {n}");
+                        Output($"Index {n}");
                         switch (n) {
                             case 1:
                             case 0:
-                                Log($"Invalid message {Context.Message.Text}"); break;
+                                Output($"Invalid message {Context.Message.Text}"); break;
                             case -1:
                                 Command = Context.Message.Text.Substring(1);
-                                Log($"* {Context.Author.ChannelName} ({Context.Author.DisplayName}) used command '{Command}'");
+                                Output($"* {Context.Author.ChannelName} ({Context.Author.DisplayName}) used command '{Command}'");
                                 break;
                             default:
                                 Command = Context.Message.Text.Substring(1, n - 1);
                                 Args = Context.Message.Text.Substring(n + 1);
-                                Log($"* {Context.Author.ChannelName} ({Context.Author.DisplayName}) used command '{Command}' with args: {Args}");
+                                Output($"* {Context.Author.ChannelName} ({Context.Author.DisplayName}) used command '{Command}' with args: {Args}");
                                 break;
                         }
 
                         if (!String.IsNullOrEmpty(Command)) {
-                            Log($"Attempting to run command {Command}");
+                            Output($"Attempting to run command {Command}");
                             MIUChatCommand ChatCommand = MixItUpClient.MIUChatCommands.FirstOrDefault(i => i.TriggerNames.Contains(Command));
                             if (ChatCommand != null) {
                                 //Log($"Attempting to run command: {ChatCommand.ID}");
                                 await ChatCommand.RunCommand(Args, Settings.SpoofPlatform, Context.Author);
                             } else {
-                                Log("Could not find command");
+                                Output("Could not find command");
                             }
                         }
                     } else {
-                        Log($"<{Context.Author.ChannelName}> ({Context.Author.DisplayName}) {Context.Message.Text}");
+                        Output($"<{Context.Author.ChannelName}> ({Context.Author.DisplayName}) {Context.Message.Text}");
                     }
+                } else if (Context.Message.Sticker != null) {
+                    Output($"<{Context.Author.ChannelName}> ({Context.Author.DisplayName}) sent a sticker: {Context.Message.Sticker.Name}");
                 } else {
-                    Log($"Received empty message: {Context.ToString()}");
+                    Output($"Received empty message: {Context.ToString()}");
                 }
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
@@ -277,14 +278,14 @@ namespace FoxedItUp {
         }
         
         private static async void AltEventClient_OnHighlightReceived(Data obj) {
-            if (Settings.ShowRandomJSON) {
-                Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+            if (Settings.LogLevel >= 6) {
+                Output(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
             }
             await AltMessageReceived(obj,true);
         }
         private static async void AltEventClient_OnMessageReceived(Data obj) {
-            if (Settings.ShowRandomJSON) {
-                Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+            if (Settings.LogLevel >= 6) {
+                Output(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
             }
             await AltMessageReceived(obj);
         }
@@ -292,7 +293,7 @@ namespace FoxedItUp {
         private static void AltEventClient_OnConnected() {
             try {
                 Connected = true;
-                Log($"Connected to channel {ChannelName}");
+                Output($"Connected to channel {ChannelName}");
                 SetWindowTitle("Connected");
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
@@ -301,7 +302,7 @@ namespace FoxedItUp {
         private static void AltEventClient_OnDisconnected() {
             try {
                 Connected = false;
-                Log("Disconnected and giving up");
+                Output("Disconnected and giving up");
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
             }
@@ -309,14 +310,14 @@ namespace FoxedItUp {
         private static void AltEventClient_OnTimeout() {
             try {
                 Connected = false;
-                Log("Connection timed out, reconnecting....");
+                Output("Connection timed out, reconnecting....");
             } catch (Exception Ex) {
                 ErrorHandler(Ex);
             }
         }
 
         internal static async void SendChat(string Message) {
-            Log($"Sending chat message {Message}");
+            Output($"Sending chat message {Message}");
             //await AltAPI.SendChatMessageAsync(ChannelName, Message);  // Not working in AltStreamLib currently
             
             await httpRequest.HttpRequest("POST", "https://altstream.online/api/v2/chat", new JObject(
@@ -326,7 +327,7 @@ namespace FoxedItUp {
             
         }
         internal static async void ShoutOut(string UserName) {
-            Log($"Sending shoutout for {UserName}");
+            Output($"Sending shoutout for {UserName}");
             //await AltAPI.SendShoutoutAsync(ChannelName, UserName);  // Not working in AltStreamLib currently
             
             await httpRequest.HttpRequest("POST", "https://altstream.online/api/shoutout", new JObject(
@@ -345,11 +346,11 @@ namespace FoxedItUp {
                  );
                 */
                 if (Fulfilled) {
-                    Log($"Fulfilling redeem {intID}");
+                    Output($"Fulfilling redeem {intID}");
                     await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Fulfill);
                     //Message.Add(new JProperty("status", "fulfilled"));
                 } else {
-                    Log($"Refunding redeem {intID}");
+                    Output($"Refunding redeem {intID}");
                     await AltAPI.SetRewardFulfillmentAsync(ChannelName, intID, Fulfillment.Refund);
                     //Message.Add(new JProperty("status", "refunded"));
                 }

@@ -18,9 +18,9 @@ namespace FoxedItUp {
         internal static void Init(int Port) {
             string Binding = "http://localhost:" + Port.ToString() + "/";
             Listener = new HttpListener();
-            Log("Attempting to bind to URL: " + Binding);
+            Output("Attempting to bind to URL: " + Binding);
             Listener.Prefixes.Add(Binding);
-            Log("Starting HTTP server");
+            Output("Starting HTTP server");
             Start();
         }
 
@@ -43,13 +43,13 @@ namespace FoxedItUp {
                 var Request = Context.Request;
                 int Result = 404;
 
-                Log($"HTTP Response: [{Request.HttpMethod}] {Request.Url.AbsolutePath}");
+                Output($"HTTP Response: [{Request.HttpMethod}] {Request.Url.AbsolutePath}");
                 if (Request.HasEntityBody) {
                     System.IO.StreamReader Reader = new System.IO.StreamReader(Request.InputStream, Request.ContentEncoding);
                     Body = await Reader.ReadToEndAsync();
                     Request.InputStream.Close();
                     Reader.Close();
-                    Log(Body);
+                    Output(Body);
                 }
 
                 switch (Request.HttpMethod.ToLower()) {
@@ -87,11 +87,6 @@ namespace FoxedItUp {
                 }
                 Context.Response.StatusCode = Result;
                 Context.Response.Close();
-
-                if (Settings.ShowRandomJSON) {
-                    //Log(Newtonsoft.Json.JsonConvert.SerializeObject(request));
-                }
-
             }
         }
     }

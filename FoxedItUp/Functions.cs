@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using AltStreamLib.EventSub.Chat.Models;
+using Newtonsoft.Json;
 using NodaTime;
 using System;
 using System.Collections.Generic;
@@ -19,16 +20,22 @@ namespace FoxedItUp {
         }
 
         private static void Logger_OnLog(LogMessage obj) {
-            if (!Settings.ShowAltStreamLibPingMessages && obj.Message == "PING") { return; }
-            Log($"AltStreamLib: {obj.Message}");
+            if (Settings.LogLevel < 6 && obj.Message == "PING") { return; }
+            Log ($"AltStreamLib: {obj.Message}",3);
         }
 
-        internal static void Log (string Message) {
+        internal static void Output (string Message) {
             Console.WriteLine(Message);
         }
 
+        internal static void Log(string Message, int LogLevel) {
+            if (LogLevel <= Settings.LogLevel) {
+                Console.WriteLine(Message);
+            }
+        }
+
         internal static void ErrorHandler(Exception Ex) {
-            Log($"ERROR: {Ex.ToString()}");
+            Log($"ERROR: {Ex.ToString()}",1);
         }
 
         internal static string HandleRelativePaths(string URL) {
@@ -75,13 +82,13 @@ namespace FoxedItUp {
             return Settings.BotToken;
         }
         internal static void Quit() {
-            if (Settings.EnableUnofficialEvents) {
-                Log("Stopping unofficial event polling");
-                AltStream_Unofficial.Disconnect();
-            }
-            Log("Stopping HTTP server");
+            //if (Settings.EnableUnofficialEvents) {
+            //    Output("Stopping unofficial event polling");
+            //    AltStream_Unofficial.Disconnect();
+            //}
+            Output("Stopping HTTP server");
             HTTPServer.Stop();
-            Log("Disconnecting AltEventClient");
+            Output("Disconnecting AltEventClient");
             AltStream.Disconnect();
 
             QuitSignal.Set();

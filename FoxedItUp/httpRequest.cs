@@ -24,7 +24,7 @@ namespace FoxedItUp {
 
                 switch (Method) {
                     case "POST":
-                        if (Settings.ShowMIURawCommands) { Log("POST: " + URL + " : " + Content); }
+                        Log("POST: " + URL + " : " + Content, 4); 
                         var PostResult = await client.PostAsync(URL, jsonData);
                         Response = PostResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)PostResult.StatusCode);
@@ -32,21 +32,21 @@ namespace FoxedItUp {
                         PostResult.Dispose();
                         break;
                     case "PUT":
-                        if (Settings.ShowMIURawCommands) { Log("PUT: " + URL + " : " + Content); }
+                        Log("PUT: " + URL + " : " + Content, 4); 
                         var PutResult = await client.PutAsync(URL, jsonData);
                         Response = PutResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)PutResult.StatusCode);
                         PutResult.Dispose();
                         break;
                     case "GET":
-                        if (Settings.ShowMIURawCommands) { Log("GET: " + URL + " : " + Content); }
+                        Log("GET: " + URL + " : " + Content, 4); 
                         var GetResult = await client.GetAsync(URL);
                         Response = GetResult.Content.ReadAsStringAsync().Result;
                         httpStatus = ((int)GetResult.StatusCode);
                         GetResult.Dispose();
                         break;
                     case "PATCH":
-                        if (Settings.ShowMIURawCommands) { Log("PATCH: " + URL + " : " + Content); }
+                        Log("PATCH: " + URL + " : " + Content, 4);
                         var request = new HttpRequestMessage(new HttpMethod("PATCH"), URL);
                         request.Content = jsonData;
                         var PatchResult = await client.SendAsync(request);
@@ -55,16 +55,16 @@ namespace FoxedItUp {
                         PatchResult.Dispose();
                         break;
                 }
-                if (Settings.ShowMIURawCommands) { 
-                    Log("HTTP status: " + httpStatus + " - Response: " + Response); 
-                //} else {
-                    //Log("HTTP status: " + httpStatus);
+                if (Settings.LogLevel >= 5) { 
+                    Log("HTTP status: " + httpStatus + " - Response: " + Response, 5); 
+                } else {
+                    Log("HTTP status: " + httpStatus, 4);
                 }
 
 
                     return Response;
             } catch (Exception e) {
-                Log(e.ToString());
+                Log(e.ToString(), 1);
                 return "";
             }
         }

@@ -15,7 +15,6 @@ namespace FoxedItUp {
         public int HttpPort = 41757;
         public string SpoofPlatform = "Twitch";
         public string ReadCommandPermissionsFrom = "Twitch";
-        public bool EnableUnofficialEvents = false;
         public bool IncludeAccountAgeAndGameInfo = false;
         public bool ParseChannelPointsFromTwitch = true;
         public bool ParseChannelPointsFromKick = false;
@@ -29,7 +28,10 @@ namespace FoxedItUp {
         public string LocalNameForKickChannelPoints = "kick channel points";
         public string LocalNameForVeloraChannelPoints = "velora channel points";
         public string LocalNameForVPZoneChannelPoints = "vpzone channel points";
-        
+
+        public int LogLevel = 1;
+
+        /*
         public bool ShowAltStreamLibMessages = false;
         public bool ShowAltStreamLibPingMessages = false;
         public bool ShowAltStreamChatMessages = true;
@@ -38,6 +40,7 @@ namespace FoxedItUp {
         public bool ShowAltStreamEvents = true;
         public bool ShowRandomJSON = false;
         public bool ShowMIURawCommands = false;
+        */
         
         [JsonIgnore] public string[] BannedCommands = new string[0];
     }
@@ -49,22 +52,22 @@ namespace FoxedItUp {
     internal static class SettingsFile {
         internal static bool Load(string FileName) {
             if (File.Exists(FileName)) {
-                Log($"Loading {FileName}");
+                Output($"Loading {FileName}");
                 __Settings TempSettings = JsonConvert.DeserializeObject<__Settings>(File.ReadAllText(FileName));
                 if (TempSettings != null) {
                     _Settings.Settings = TempSettings;
                     return true;
                 } else {
-                    Log($"Invalid settings file: {FileName}");
+                    Output($"Invalid settings file: {FileName}");
                     return false;
                 }
             } else {
-                Log($"Could not find settings file {FileName}");
+                Output($"Could not find settings file {FileName}");
                 return false;
             }
         }
         internal static void Save(string FileName) {
-            Log($"Saving to {FileName}");
+            Output($"Saving to {FileName}");
             File.WriteAllText(FileName, JsonConvert.SerializeObject(_Settings.Settings, Formatting.Indented));
         }
     }

@@ -6,6 +6,7 @@ using NodaTime;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
@@ -29,8 +30,8 @@ namespace FoxedItUp {
             if (SpecialIdentifiers != null) {
                 Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers));
             }
-            if (Settings.ShowRandomJSON) {
-                Log(SpecialIdentifiers.ToString());
+            if (Settings.LogLevel >= 6) {
+                Output(SpecialIdentifiers.ToString());
             }
             await HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString());
         }
@@ -40,14 +41,14 @@ namespace FoxedItUp {
             if (RealPlatform == "AltStream") {
                 AltStreamUserInfo User = AltStream.GetBasicUserInfo(UserName);
                 
-                if (Settings.ShowRandomJSON) {
-                    Log("Result object");
-                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(User.UserInfo));
+                if (Settings.LogLevel >= 6) {
+                    Output("Result object");
+                    Output(Newtonsoft.Json.JsonConvert.SerializeObject(User.UserInfo));
                 }
                 //TimeSpan FollowAge;
 
                 if (User.CreatedAt == new DateTime(0)) {
-                    Log("User not found");
+                    Output("User not found");
                     return null; 
                 }
 
@@ -250,7 +251,7 @@ namespace FoxedItUp {
                 }
                 await _RunCommand(Arguments, SpoofPlatform, SpecialIdentifiers);
             } else {
-                Log($"No permission for {User.ChannelName} to run this");
+                Output($"No permission for {User.ChannelName} to run this");
             }
         }
         internal MIUChatCommand(MIUCommandBase Base) { ID = Base.ID; Name = Base.Name; Enabled = Base.Enabled; AllowUser = Base.AllowUser; }
@@ -318,161 +319,180 @@ namespace FoxedItUp {
         internal static List<MIUChatCommand> MIUChatCommands = new List<MIUChatCommand>();
         internal static List<MIURedeemCommand> MIUChannelPoints = new List<MIURedeemCommand>();
         internal static MIURaidCommand ChannelRaided = null;
-        internal static MIUUnofficialCommand ChannelFollowed = null;
+        internal static MIUCommand ChannelFollowed = null;
         internal static MIUSubscriptionCommand ChannelSubscribed = null;
         internal static MIUSubscriptionCommand ChannelResubscribed = null;
         internal static MIUDonationCommand ChannelDonation = null;
 
         internal static async Task UpdateMiuCommands() {
-            try {
-                List<MIUChatCommand> TempMIUChatCommands = new List<MIUChatCommand>();
-                List<MIURedeemCommand> TempMIUChannelPoints = new List<MIURedeemCommand>();
-                List<String> UnrecognisedCommandTypes = new List<String>();
-                int skip = 0;
-                int count = 0;
-                do {
-                    var GetResult = await client.GetAsync($"{Settings.miuURL}/commands?pagesize=10&skip=" + skip.ToString());
-                    string Response = GetResult.Content.ReadAsStringAsync().Result;
+            int ConnectionAttempts = 0;
+            bool Done = false;
+            while (!Done) {
+                try {
+                    List<MIUChatCommand> TempMIUChatCommands = new List<MIUChatCommand>();
+                    List<MIURedeemCommand> TempMIUChannelPoints = new List<MIURedeemCommand>();
+                    List<String> UnrecognisedCommandTypes = new List<String>();
+                    int skip = 0;
+                    int count = 0;
+                    do {
+                        var GetResult = await client.GetAsync($"{Settings.miuURL}/commands?pagesize=10&skip=" + skip.ToString());
+                        string Response = GetResult.Content.ReadAsStringAsync().Result;
 
-                    JObject Results = JsonConvert.DeserializeObject<JObject>(Response);
-                    //Log(Results.ToString());
-                    count = ((JArray)Results["Commands"]).Count;
-                    // Console.WriteLine("Count: " + count.ToString());
-                    foreach (JObject Result in (JArray)Results["Commands"]) {
-                        Log(Result.ToString());
-                        if (!Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower(), StringComparer.OrdinalIgnoreCase) &&
-                          !Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower().Replace(" ",""), StringComparer.OrdinalIgnoreCase)) {
-                            MIUCommandBase TempCommand = new MIUCommandBase();
-                            TempCommand.Enabled = (bool)Result["IsEnabled"];
-                            TempCommand.ID = (string)Result["ID"];
-                            TempCommand.Name = ((string)Result["Name"]).ToLower();
-                            if (TempCommand.Enabled) {
-                                string CommandType = ((string)Result["Type"]).ToLower();
-                                //switch (((string)Result["Type"]).ToLower()) {
-                                if ((CommandType == Settings.LocalNameForChat) || (CommandType == Settings.LocalNameForPreMade)) {
-                                    MIUChatCommand TempChatCommand = new MIUChatCommand(TempCommand);
-                                    if (Result.ContainsKey("Triggers")) {
-                                        foreach (JValue Trigger in (JArray)Result["Triggers"]) {
-                                            TempChatCommand.TriggerNames.Add(Trigger.ToString().Substring(1));
+                        JObject Results = JsonConvert.DeserializeObject<JObject>(Response);
+                        //Log(Results.ToString());
+                        count = ((JArray)Results["Commands"]).Count;
+                        // Console.WriteLine("Count: " + count.ToString());
+                        foreach (JObject Result in (JArray)Results["Commands"]) {
+                            Log(Result.ToString(),3);
+                            if (!Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower(), StringComparer.OrdinalIgnoreCase) &&
+                              !Settings.BannedCommands.Contains(((string)Result["Name"]).ToLower().Replace(" ", ""), StringComparer.OrdinalIgnoreCase)) {
+                                MIUCommandBase TempCommand = new MIUCommandBase();
+                                TempCommand.Enabled = (bool)Result["IsEnabled"];
+                                TempCommand.ID = (string)Result["ID"];
+                                TempCommand.Name = ((string)Result["Name"]).ToLower();
+                                if (TempCommand.Enabled) {
+                                    string CommandType = ((string)Result["Type"]).ToLower();
+                                    //switch (((string)Result["Type"]).ToLower()) {
+                                    if ((CommandType == Settings.LocalNameForChat) || (CommandType == Settings.LocalNameForPreMade)) {
+                                        MIUChatCommand TempChatCommand = new MIUChatCommand(TempCommand);
+                                        if (Result.ContainsKey("Triggers")) {
+                                            foreach (JValue Trigger in (JArray)Result["Triggers"]) {
+                                                TempChatCommand.TriggerNames.Add(Trigger.ToString().Substring(1));
+                                            }
+                                        } else {
+                                            TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
                                         }
-                                    } else {
-                                        TempChatCommand.TriggerNames.Add(TempCommand.Name.Replace(" ", ""));
-                                    }
 
-                                    if (Result.ContainsKey("RoleRequirements")) {
-                                        TempChatCommand.AllowStreamer = false;
-                                        TempChatCommand.AllowModerator = false;
-                                        TempChatCommand.AllowUser = false;
-                                        foreach (JObject RoleRequirement in Result["RoleRequirements"]) {
-                                            if ((new string[] { "all", Settings.ReadCommandPermissionsFrom.ToLower() }).Contains(RoleRequirement["Platform"].ToString().ToLower())) {
-                                                switch (RoleRequirement["Role"].ToString().ToLower()) {
-                                                    case "streamer":
-                                                        TempChatCommand.AllowStreamer = true;
-                                                        break;
-                                                    case "moderator":
-                                                        TempChatCommand.AllowStreamer = true;
-                                                        TempChatCommand.AllowModerator = true;
-                                                        break;
-                                                    case "regular":
-                                                    case "follower":
-                                                        TempChatCommand.AllowStreamer = true;
-                                                        TempChatCommand.AllowModerator = true;
-                                                        TempChatCommand.AllowFollower = true;
-                                                        break;
-                                                    case "user":
-                                                        TempChatCommand.AllowStreamer = true;
-                                                        TempChatCommand.AllowModerator = true;
-                                                        TempChatCommand.AllowFollower = true;
-                                                        TempChatCommand.AllowUser = true;
-                                                        break;
-                                                    case "banned":
-                                                        foreach (JValue Role in (JArray)RoleRequirement["Roles"]) {
-                                                            switch (Role.ToString().ToLower()) {
-                                                                case "streamer": TempChatCommand.AllowStreamer = true; break;
-                                                                case "moderator": TempChatCommand.AllowModerator = true; break;
-                                                                case "follower": TempChatCommand.AllowFollower = true; break;
-                                                                case "user": TempChatCommand.AllowUser = true; break;
+                                        if (Result.ContainsKey("RoleRequirements")) {
+                                            TempChatCommand.AllowStreamer = false;
+                                            TempChatCommand.AllowModerator = false;
+                                            TempChatCommand.AllowUser = false;
+                                            foreach (JObject RoleRequirement in Result["RoleRequirements"]) {
+                                                if ((new string[] { "all", Settings.ReadCommandPermissionsFrom.ToLower() }).Contains(RoleRequirement["Platform"].ToString().ToLower())) {
+                                                    switch (RoleRequirement["Role"].ToString().ToLower()) {
+                                                        case "streamer":
+                                                            TempChatCommand.AllowStreamer = true;
+                                                            break;
+                                                        case "moderator":
+                                                            TempChatCommand.AllowStreamer = true;
+                                                            TempChatCommand.AllowModerator = true;
+                                                            break;
+                                                        case "regular":
+                                                        case "follower":
+                                                            TempChatCommand.AllowStreamer = true;
+                                                            TempChatCommand.AllowModerator = true;
+                                                            TempChatCommand.AllowFollower = true;
+                                                            break;
+                                                        case "user":
+                                                            TempChatCommand.AllowStreamer = true;
+                                                            TempChatCommand.AllowModerator = true;
+                                                            TempChatCommand.AllowFollower = true;
+                                                            TempChatCommand.AllowUser = true;
+                                                            break;
+                                                        case "banned":
+                                                            foreach (JValue Role in (JArray)RoleRequirement["Roles"]) {
+                                                                switch (Role.ToString().ToLower()) {
+                                                                    case "streamer": TempChatCommand.AllowStreamer = true; break;
+                                                                    case "moderator": TempChatCommand.AllowModerator = true; break;
+                                                                    case "follower": TempChatCommand.AllowFollower = true; break;
+                                                                    case "user": TempChatCommand.AllowUser = true; break;
+                                                                }
                                                             }
-                                                        }
-                                                        break;
+                                                            break;
 
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
 
-                                    TempMIUChatCommands.Add(TempChatCommand);
-                                    Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)}) Streamer: {TempChatCommand.AllowStreamer}, Moderator: {TempChatCommand.AllowModerator}, User: {TempChatCommand.AllowUser}");
+                                        TempMIUChatCommands.Add(TempChatCommand);
+                                        Output($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)}) Streamer: {TempChatCommand.AllowStreamer}, Moderator: {TempChatCommand.AllowModerator}, Follower: {TempChatCommand.AllowFollower}, User: {TempChatCommand.AllowUser}");
 
-                                } else if (CommandType == Settings.LocalNameForTwitchChannelPoints) {
-                                    if (Settings.ParseChannelPointsFromTwitch) {
-                                        TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                        Log($"Added twitch redeem: {TempCommand.Name}");
+                                    } else if (CommandType == Settings.LocalNameForTwitchChannelPoints) {
+                                        if (Settings.ParseChannelPointsFromTwitch) {
+                                            TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
+                                            Output($"Added twitch redeem: {TempCommand.Name}");
+                                        }
+                                    } else if (CommandType == Settings.LocalNameForKickChannelPoints) {
+                                        if (Settings.ParseChannelPointsFromKick) {
+                                            TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
+                                            Output($"Added kick redeem: {TempCommand.Name}");
+                                        }
+                                    } else if (CommandType == Settings.LocalNameForVeloraChannelPoints) {
+                                        if (Settings.ParseChannelPointsFromVelora) {
+                                            TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
+                                            Output($"Added velora redeem: {TempCommand.Name}");
+                                        }
+                                    } else if (CommandType == Settings.LocalNameForKickChannelPoints) {
+                                        if (Settings.ParseChannelPointsFromVPZone) {
+                                            TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
+                                            Output($"Added vpzone redeem: {TempCommand.Name}");
+                                        }
+                                    } else if (CommandType == Settings.LocalNameForEvent) {
+                                        switch (((string)Result["Name"]).ToLower()) {
+                                            case "channel raided": ChannelRaided = new MIURaidCommand(TempCommand); Output("Added channel raided event"); break;
+                                            case "channel followed": ChannelFollowed = new MIUCommand(TempCommand); Output("Added channel followed event"); break;
+                                            case "channel subscribed": ChannelSubscribed = new MIUSubscriptionCommand(TempCommand); Output("Added channel subscribed event"); break;
+                                            case "channel resubscribed": ChannelResubscribed = new MIUSubscriptionCommand(TempCommand); Output("Added channel subscribed event"); break;
+                                            case "generic donation": ChannelDonation = new MIUDonationCommand(TempCommand); Output("Added channel donated event"); break;
+                                        }
+                                    } else if (CommandType != Settings.LocalNameForTimer) {
+                                        if (!UnrecognisedCommandTypes.Contains(CommandType)) {
+                                            UnrecognisedCommandTypes.Add(CommandType);
+                                        }
                                     }
-                                } else if (CommandType == Settings.LocalNameForKickChannelPoints) {
-                                    if (Settings.ParseChannelPointsFromKick) {
-                                        TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                        Log($"Added kick redeem: {TempCommand.Name}");
-                                    }
-                                } else if (CommandType == Settings.LocalNameForVeloraChannelPoints) {
-                                    if (Settings.ParseChannelPointsFromVelora) {
-                                        TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                        Log($"Added velora redeem: {TempCommand.Name}");
-                                    }
-                                } else if (CommandType == Settings.LocalNameForKickChannelPoints) {
-                                    if (Settings.ParseChannelPointsFromVPZone) {
-                                        TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                        Log($"Added vpzone redeem: {TempCommand.Name}");
-                                    }
-                                } else if (CommandType == Settings.LocalNameForEvent) {
-                                    switch (((string)Result["Name"]).ToLower()) {
-                                        case "channel raided": ChannelRaided = new MIURaidCommand(TempCommand); Log("Added channel raided event"); break;
-                                        case "channel followed": ChannelFollowed = new MIUUnofficialCommand(TempCommand); Log("Added channel followed event"); break;
-                                        case "channel subscribed": ChannelSubscribed = new MIUSubscriptionCommand(TempCommand); Log("Added channel subscribed event"); break;
-                                        case "channel resubscribed": ChannelResubscribed = new MIUSubscriptionCommand(TempCommand); Log("Added channel subscribed event"); break;
-                                        case "generic donation": ChannelDonation = new MIUDonationCommand(TempCommand); Log("Added channel donated event"); break;
-                                    }
-                                } else if (CommandType != Settings.LocalNameForTimer) {
-                                    if (!UnrecognisedCommandTypes.Contains(CommandType)) {
-                                        UnrecognisedCommandTypes.Add(CommandType);
-                                    }
+                                } else {
+                                    Output($"Skipping disabled command: {TempCommand.Name}");
                                 }
                             } else {
-                                Log($"Skipping disabled command: {TempCommand.Name}");
+                                Output($"Skipping banned command: {Result["Name"]}");
                             }
-                        } else {
-                            Log($"Skipping banned command: {Result["Name"]}");
                         }
+                        GetResult.Dispose();
+                        skip += 10;
+                    } while (count >= 10);
+                    if (TempMIUChatCommands.Count > 0) { MIUChatCommands = TempMIUChatCommands; }
+                    if (TempMIUChannelPoints.Count > 0) { MIUChannelPoints = TempMIUChannelPoints; }
+                    if (ChannelRaided == null) { Output("Warning: We did not find a \"Generic Channel Raided\" event. \r\nIf you used \"Twitch Channel Raided\" please copy it as a generic"); }
+                    if (ChannelFollowed == null) { Output("Warning: We did not find a \"Generic Channel Followed\" event. \r\nIf you used \"Twitch Channel Followed\" please copy it as a generic"); }
+                    if (ChannelSubscribed == null) { Output("Warning: We did not find a \"Generic Channel Subscribed\" event. \r\nIf you used \"Twitch Channel Subscribed\" please copy it as a generic"); }
+                    if (ChannelResubscribed == null) { Output("Warning: We did not find a \"Generic Channel Resubscribed\" event. \r\nIf you used \"Twitch Channel Resubscribed\" please copy it as a generic"); }
+                    if (UnrecognisedCommandTypes.Count > 0) {
+                        Output("Warning: Found the following unrecognised command types");
+                        foreach (string CommandType in UnrecognisedCommandTypes) { Output(CommandType); }
+                        Output("The command types we are expecting are:");
+                        Output($"LocalNameForChat:                {Settings.LocalNameForChat}");
+                        Output($"LocalNameForPreMade:             {Settings.LocalNameForPreMade}");
+                        Output($"LocalNameForEvent:               {Settings.LocalNameForEvent}");
+                        Output($"LocalNameForTimer:               {Settings.LocalNameForTimer}");
+                        Output($"LocalNameForTwitchChannelPoints: {Settings.LocalNameForTwitchChannelPoints}");
+                        Output($"LocalNameForKickChannelPoints:   {Settings.LocalNameForKickChannelPoints}");
+                        Output($"LocalNameForVeloraChannelPoints: {Settings.LocalNameForVeloraChannelPoints}");
+                        Output($"LocalNameForVPZoneChannelPoints: {Settings.LocalNameForVPZoneChannelPoints}");
+                        Output("");
+                        Output("If the unrecognised command types are just the above settings but in your local language, please edit Settings.json");
+                        Output("and cut & paste the values above. We will then be able to correctly identify your existing MixItUp commands");
+                        Output("These are case-sensitive, and must be in lower case.");
+                        Output("You will also need to review BanList.txt as the default values are in English");
                     }
-                    GetResult.Dispose();
-                    skip += 10;
-                } while (count >= 10);
-                if (TempMIUChatCommands.Count > 0) { MIUChatCommands = TempMIUChatCommands; }
-                if (TempMIUChannelPoints.Count > 0) { MIUChannelPoints = TempMIUChannelPoints; }
-                if (ChannelRaided == null) { Log("Warning: We did not find a \"Generic Channel Raided\" event. \r\nIf you used \"Twitch Channel Raided\" please copy it as a generic"); }
-                if (ChannelFollowed == null) { Log("Warning: We did not find a \"Generic Channel Followed\" event. \r\nIf you used \"Twitch Channel Followed\" please copy it as a generic"); }
-                if (ChannelSubscribed == null) { Log("Warning: We did not find a \"Generic Channel Subscribed\" event. \r\nIf you used \"Twitch Channel Subscribed\" please copy it as a generic"); }
-                if (ChannelResubscribed == null) { Log("Warning: We did not find a \"Generic Channel Resubscribed\" event. \r\nIf you used \"Twitch Channel Resubscribed\" please copy it as a generic"); }
-                if (UnrecognisedCommandTypes.Count > 0) {
-                    Log("Warning: Found the following unrecognised command types");
-                    foreach (string CommandType in UnrecognisedCommandTypes) { Log(CommandType); }
-                    Log("The command types we are expecting are:");
-                    Log($"LocalNameForChat:                {Settings.LocalNameForChat}");
-                    Log($"LocalNameForPreMade:             {Settings.LocalNameForPreMade}");
-                    Log($"LocalNameForEvent:               {Settings.LocalNameForEvent}");
-                    Log($"LocalNameForTimer:               {Settings.LocalNameForTimer}");
-                    Log($"LocalNameForTwitchChannelPoints: {Settings.LocalNameForTwitchChannelPoints}");
-                    Log($"LocalNameForKickChannelPoints:   {Settings.LocalNameForKickChannelPoints}");
-                    Log($"LocalNameForVeloraChannelPoints: {Settings.LocalNameForVeloraChannelPoints}");
-                    Log($"LocalNameForVPZoneChannelPoints: {Settings.LocalNameForVPZoneChannelPoints}");
-                    Log("");
-                    Log("If the unrecognised command types are just the above settings but in your local language, please edit Settings.json");
-                    Log("and cut & paste the values above. We will then be able to correctly identify your existing MixItUp commands");
-                    Log("These are case-sensitive, and must be in lower case.");
-                    Log("You will also need to review BanList.txt as the default values are in English");
+                    Done = true;
+                } catch (System.Net.Http.HttpRequestException e) {
+                    if (e.InnerException is System.Net.WebException && e.InnerException.InnerException is System.Net.Sockets.SocketException &&
+                      (((System.Net.Sockets.SocketException)e.InnerException.InnerException).ErrorCode == 10061)) {
+                        ConnectionAttempts++;
+                        Output("Could not connect to MixItUp. Retrying...");
+                        if (ConnectionAttempts == 5) {
+                            Output("Did you remember to enable the developer API? (Services -> Developer API) ");
+                        }
+                        System.Threading.Thread.Sleep(3000);
+                    } else {
+                        Output(e.ToString());
+                        Done = true;
+                    }
+                } catch (Exception e) {
+                    Output(e.ToString());
+                    Done = true;
                 }
-            } catch (Exception e) {
-                Log(e.ToString());
             }
         }
 
