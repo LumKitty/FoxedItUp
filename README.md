@@ -8,33 +8,32 @@ The purpose of this app is to bring basic functionality for Twitch streamers mov
 1. Enable the MixItUp developer API: Services -> Developer API -> Connect
 2. Run FoxedItUp.exe
 3. It will create a new Settings.json and BanList.txt file
-4. Edit Settings.json and add your AltStream channelname
+4. Provide your channel name and bot token when prompted (do not do this while streaming your desktop!)
 5. Review the !command banlist file (see below)
 6. Run FoxedItUp.exe again
 
 The app should now connect to both AltStream and MixItUp. Any !commands received in chat will be relayed to MixItUp if the command exists there.
 
-Note: Only the main name will be used, as MixItUp doesn't let me see any of the alternate names. For example if your command is called "ShoutOut"
-and the options are !shoutout and !so, only !shoutout will work. If there are any spaces in your command name, these will be removed (e.g.
-Content Warning becomes !contentwarning)
+Note: If you are not running MixItUp Preview v1.8.210 or later, only the main name will be used, as MixItUp doesn't let me see any of the 
+alternate names. For example if your command is called "ShoutOut" and the options are !shoutout and !so, only !shoutout will work. If there 
+are any spaces in your command name, these will be removed (e.g. Content Warning becomes !contentwarning)
 
-Any channel point redeems must have the exact same name on AltStream as they do on Twitch.
+Any channel point redeems must have the exact same name on AltStream as they do on Twitch (or whatever platform you are taking them from)
 
-Raid, Follow, Tip & Sub alerts must use the Generic -> "Channel Raided" event in MIU, not the "Twitch Channel Raided" event.  
+Raid, Follow, Tip & Sub alerts must use the Generic -> "Channel Raided" event in MIU, not e.g. the "Twitch Channel Raided" event.  
 
 Events fired from FIU should set $PlatformEx = AltStream. You can check for that before responding on Twitch, for example  
 Redeem events set $AltRedeemID. This can be used to automatically mark redeems as complete (see the HTTP server section below)
 
 ### Known issues
 - Follow alerts not currently working as this was changed to require a stream key
-- Versions later than 0.2.8 cannot auth if you have "Require Login to Watch" set. Please stick with 0.2.8 if you need this feature enabled. Unfortunately you will not be able to use any of the newer features until this is resolved server-side  
 
 ### Security Warning (BanList.txt)
 The current public release of MixItUp does not give me visibility of any permissions you have set on commands, and the dev API bypasses permissions anyway. 
 This means that by default commands you have restricted to Moderators only, or Streamer only, are made available to everyone on AltStream.  
 
 The current public preview of MixItUp (1.8.210 or higher) does give me visibility of permissions and these are enforced by default. However we cannot
-track "follower" or "regular" so these are downgraded to just "user". (ie follower-only redeems will only work for >= subscriber) The only valid permissions are "user", "subscriber", "moderator" and "streamer".
+track "regular" users so these are downgraded to just "user" or "follower" as appropriate. 
 Subscriber is untested!
 
 For the mainline release the only way to remain secure is to ban all !commands that are not generally available to everyone. By default I fill this list with
