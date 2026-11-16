@@ -10,7 +10,7 @@ The purpose of this app is to bring basic functionality for Twitch streamers mov
 3. It will create a new Settings.json and BanList.txt file
 4. Provide your channel name and bot token when prompted (do not do this while streaming your desktop!)
 5. Review the !command banlist file (see below)
-6. Run FoxedItUp.exe again
+6. If you had to amend the banlist, restart FoxedItUp
 
 The app should now connect to both AltStream and MixItUp. Any !commands received in chat will be relayed to MixItUp if the command exists there.
 
@@ -24,6 +24,8 @@ Raid, Follow, Tip & Sub alerts must use the Generic -> "Channel Raided" event in
 
 Events fired from FIU should set $PlatformEx = AltStream. You can check for that before responding on Twitch, for example  
 Redeem events set $AltRedeemID. This can be used to automatically mark redeems as complete (see the HTTP server section below)
+
+If you don't like the new theming, edit Settings.json and set DisableColor to true  
 
 ### Known issues
 - Follow alerts not currently working as this was changed to require a stream key
