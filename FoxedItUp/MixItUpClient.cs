@@ -31,7 +31,7 @@ namespace FoxedItUp {
                 Content.Add(new JProperty("SpecialIdentifiers", SpecialIdentifiers));
             }
             if (Settings.LogLevel >= 6) {
-                Output(SpecialIdentifiers.ToString());
+                Log(SpecialIdentifiers.ToString(),6);
             }
             await HttpRequest("POST", $"{Settings.miuURL}/commands/{ID}", Content.ToString());
         }
@@ -41,9 +41,11 @@ namespace FoxedItUp {
             if (RealPlatform == "AltStream") {
                 AltStreamUserInfo User = AltStream.GetBasicUserInfo(UserName);
                 
+                if (User == null) { return null; }
+
                 if (Settings.LogLevel >= 6) {
-                    Output("Result object");
-                    Output(Newtonsoft.Json.JsonConvert.SerializeObject(User.UserInfo));
+                    Log("Result object",6);
+                    Log(Newtonsoft.Json.JsonConvert.SerializeObject(User.UserInfo),6);
                 }
                 //TimeSpan FollowAge;
 
@@ -327,6 +329,7 @@ namespace FoxedItUp {
         internal static async Task UpdateMiuCommands() {
             int ConnectionAttempts = 0;
             bool Done = false;
+            Output("Connecting to MixItUp and downloading command list");
             while (!Done) {
                 try {
                     List<MIUChatCommand> TempMIUChatCommands = new List<MIUChatCommand>();
@@ -334,6 +337,11 @@ namespace FoxedItUp {
                     List<String> UnrecognisedCommandTypes = new List<String>();
                     int skip = 0;
                     int count = 0;
+                    int ChatCommandCount = 0;
+                    int RedeemCommandCount = 0;
+                    int OtherCommandCount = 0;
+                    int BannedCommandCount = 0;
+                    int DisabledCommandCount = 0;
                     do {
                         var GetResult = await client.GetAsync($"{Settings.miuURL}/commands?pagesize=10&skip=" + skip.ToString());
                         string Response = GetResult.Content.ReadAsStringAsync().Result;
@@ -406,35 +414,40 @@ namespace FoxedItUp {
                                         }
 
                                         TempMIUChatCommands.Add(TempChatCommand);
-                                        Output($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)}) Streamer: {TempChatCommand.AllowStreamer}, Moderator: {TempChatCommand.AllowModerator}, Follower: {TempChatCommand.AllowFollower}, User: {TempChatCommand.AllowUser}");
+                                        Log($"Added chat command: {TempChatCommand.Name} (as !{string.Join(" !", TempChatCommand.TriggerNames)}) Streamer: {TempChatCommand.AllowStreamer}, Moderator: {TempChatCommand.AllowModerator}, Follower: {TempChatCommand.AllowFollower}, User: {TempChatCommand.AllowUser}",1);
+                                        ChatCommandCount++;
 
                                     } else if (CommandType == Settings.LocalNameForTwitchChannelPoints) {
                                         if (Settings.ParseChannelPointsFromTwitch) {
                                             TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                            Output($"Added twitch redeem: {TempCommand.Name}");
+                                            Log($"Added twitch redeem: {TempCommand.Name}",1);
+                                            RedeemCommandCount++;
                                         }
                                     } else if (CommandType == Settings.LocalNameForKickChannelPoints) {
                                         if (Settings.ParseChannelPointsFromKick) {
                                             TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                            Output($"Added kick redeem: {TempCommand.Name}");
+                                            Log($"Added kick redeem: {TempCommand.Name}",1);
+                                            RedeemCommandCount++;
                                         }
                                     } else if (CommandType == Settings.LocalNameForVeloraChannelPoints) {
                                         if (Settings.ParseChannelPointsFromVelora) {
                                             TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                            Output($"Added velora redeem: {TempCommand.Name}");
+                                            Log($"Added velora redeem: {TempCommand.Name}",1);
+                                            RedeemCommandCount++;
                                         }
                                     } else if (CommandType == Settings.LocalNameForKickChannelPoints) {
                                         if (Settings.ParseChannelPointsFromVPZone) {
                                             TempMIUChannelPoints.Add(new MIURedeemCommand(TempCommand));
-                                            Output($"Added vpzone redeem: {TempCommand.Name}");
+                                            Log($"Added vpzone redeem: {TempCommand.Name}",1);
+                                            RedeemCommandCount++;
                                         }
                                     } else if (CommandType == Settings.LocalNameForEvent) {
                                         switch (((string)Result["Name"]).ToLower()) {
-                                            case "channel raided": ChannelRaided = new MIURaidCommand(TempCommand); Output("Added channel raided event"); break;
-                                            case "channel followed": ChannelFollowed = new MIUCommand(TempCommand); Output("Added channel followed event"); break;
-                                            case "channel subscribed": ChannelSubscribed = new MIUSubscriptionCommand(TempCommand); Output("Added channel subscribed event"); break;
-                                            case "channel resubscribed": ChannelResubscribed = new MIUSubscriptionCommand(TempCommand); Output("Added channel subscribed event"); break;
-                                            case "generic donation": ChannelDonation = new MIUDonationCommand(TempCommand); Output("Added channel donated event"); break;
+                                            case "channel raided": ChannelRaided = new MIURaidCommand(TempCommand); Log("Added channel raided event",1); OtherCommandCount++; break;
+                                            case "channel followed": ChannelFollowed = new MIUCommand(TempCommand); Log("Added channel followed event",1); OtherCommandCount++; break;
+                                            case "channel subscribed": ChannelSubscribed = new MIUSubscriptionCommand(TempCommand); Log("Added channel subscribed event",1); OtherCommandCount++; break;
+                                            case "channel resubscribed": ChannelResubscribed = new MIUSubscriptionCommand(TempCommand); Log("Added channel subscribed event",1); OtherCommandCount++; break;
+                                            case "generic donation": ChannelDonation = new MIUDonationCommand(TempCommand); Log("Added channel donated event",1); OtherCommandCount++; break;
                                         }
                                     } else if (CommandType != Settings.LocalNameForTimer) {
                                         if (!UnrecognisedCommandTypes.Contains(CommandType)) {
@@ -442,10 +455,12 @@ namespace FoxedItUp {
                                         }
                                     }
                                 } else {
-                                    Output($"Skipping disabled command: {TempCommand.Name}");
+                                    Log($"Skipping disabled command: {TempCommand.Name}",1);
+                                    DisabledCommandCount++;
                                 }
                             } else {
-                                Output($"Skipping banned command: {Result["Name"]}");
+                                Log($"Skipping banned command: {Result["Name"]}",1);
+                                BannedCommandCount++;
                             }
                         }
                         GetResult.Dispose();
@@ -475,6 +490,11 @@ namespace FoxedItUp {
                         Output("These are case-sensitive, and must be in lower case.");
                         Output("You will also need to review BanList.txt as the default values are in English");
                     }
+                    Output("");
+                    Output("Finished downloading MixItUp commands");
+                    Output($"Added   - Chat: {ChatCommandCount}, Redeem: {RedeemCommandCount}, Other: {OtherCommandCount}");
+                    Output($"Skipped - Banned: {BannedCommandCount}, Disabled {DisabledCommandCount}");
+                    Output("");
                     Done = true;
                 } catch (System.Net.Http.HttpRequestException e) {
                     if (e.InnerException is System.Net.WebException && e.InnerException.InnerException is System.Net.Sockets.SocketException &&

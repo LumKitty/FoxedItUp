@@ -18,7 +18,7 @@ namespace FoxedItUp {
         internal static void Init(int Port) {
             string Binding = "http://localhost:" + Port.ToString() + "/";
             Listener = new HttpListener();
-            Output("Attempting to bind to URL: " + Binding);
+            Output("Creating HTTP server on: " + Binding);
             Listener.Prefixes.Add(Binding);
             Output("Starting HTTP server");
             Start();
@@ -43,13 +43,13 @@ namespace FoxedItUp {
                 var Request = Context.Request;
                 int Result = 404;
 
-                Output($"HTTP Response: [{Request.HttpMethod}] {Request.Url.AbsolutePath}");
+                Log($"HTTP Response: [{Request.HttpMethod}] {Request.Url.AbsolutePath}",1);
                 if (Request.HasEntityBody) {
                     System.IO.StreamReader Reader = new System.IO.StreamReader(Request.InputStream, Request.ContentEncoding);
                     Body = await Reader.ReadToEndAsync();
                     Request.InputStream.Close();
                     Reader.Close();
-                    Output(Body);
+                    Log(Body,1);
                 }
 
                 switch (Request.HttpMethod.ToLower()) {

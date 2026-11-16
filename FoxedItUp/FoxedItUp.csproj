@@ -6,7 +6,7 @@
     <StartupObject>FoxedItUp.FoxedItUp</StartupObject>
     <Version />
     <!-- <Title>0.2.7</Title> -->
-    <VersionPrefix>0.3.9-prealpha</VersionPrefix>
+    <VersionPrefix>0.4.0-beta</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -26,6 +26,12 @@
   <ItemGroup>
     <Reference Include="AltStreamLib">
       <HintPath>..\..\Libs\AltStreamLib-v0.4.33-net481\AltStreamLib.dll</HintPath>
+    </Reference>
+    <Reference Include="Pastel">
+      <HintPath>..\..\Libs\Pastel-7.0.0\src\bin\Debug\net462\Pastel.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>..\..\Libs\Pastel-7.0.0\src\bin\Debug\net462\System.Memory.dll</HintPath>
     </Reference>
   </ItemGroup>
 

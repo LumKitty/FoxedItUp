@@ -8,23 +8,55 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Drawing;
 using static FoxedItUp._Settings;
 using static FoxedItUp.Functions;
 
 namespace FoxedItUp {
     static class FoxedItUp {
         static int Main(string[] args) {
+
+            File.WriteAllText(Settings.LogFile, $"FoxedItUp v{Assembly.GetExecutingAssembly().GetName().Version} starting\n");
             string AppDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string BanListFile = AppDir + "\\BanList.txt";
-            string JsonFile = AppDir + "\\Settings.json";
+            string SettingsFileName = AppDir + "\\Settings.json";
+            string ThemeFileName = AppDir + "\\Theme.json";
             bool SettingsOK = true;
 
             SetWindowTitle("init");
             Console.OutputEncoding = Encoding.UTF8;
 
-            SettingsFile.Load(JsonFile);
-            SettingsFile.Save(JsonFile);
-            
+            SettingsFile.Load(SettingsFileName);
+            ThemeFile.Load(ThemeFileName);
+            ThemeFile.Save(ThemeFileName);
+
+            if (Settings.DisableColor) {
+                Pastel.ConsoleExtensions.Disable();
+            }
+
+            if (String.IsNullOrEmpty(Settings.ChannelName)) {
+                Console.Write("Please enter your channel name: ");
+                Settings.ChannelName = Console.ReadLine();
+            }
+
+            if (String.IsNullOrEmpty(Settings.EncryptedBotToken)) {
+                if (Settings.BotToken == null) {
+                    Output("Please create a bot token at https://https://altstream.online/YOUR_CHANNEL/settings?tab=bot");
+                    Output("Do not enter your token on-screen while streaming!", Color.White, Color.Red);
+                    Console.Write("Bot token: ");
+                    string TempToken = Console.ReadLine();
+                    Settings.EncryptedBotToken = Encrypt(TempToken);
+                    TempToken = null;
+                    System.GC.Collect();
+                } else {
+                    Output("Found unencrypted bot token in settings... Encrypting");
+                    Settings.EncryptedBotToken = Encrypt(Settings.BotToken);
+                    Settings.BotToken = null;
+                    System.GC.Collect();
+                }
+            }
+            Log($"Encrypted token: {Settings.EncryptedBotToken}", 1);
+
             if (!File.Exists(BanListFile)) {
                 Output("");
                 Output($"BanList file not found. Creating {BanListFile}");
@@ -55,21 +87,18 @@ uptime
 xboxgame");
                 Output("");
                 Output("Please review this file and enter any commands that you do not want available");
-                Output("to general users. MixItUp does not give me information on who has permission");
-                Output("to use what commands and this method bypasses all permissions. You should ban");
-                Output("all !commands that you don't want available to everyone");
-                SettingsOK = false;
+                Output("to general users.");
+                Output("MixItUp commands that use user inventories (such as daily checkin commands)");
+                Output("Cannot work with AltStream until we get native support in MixItUp. Therefore");
+                Output("you should add these to the banlist and ensure that it worked!");
+                Output("MixItUp pre-made commands may be named differently if your language is not");
+                Output("English, so you may need to adjust the default banlist");
+                Output("");
+                Console.Write("Press enter to continue");
+                Console.ReadLine();
             }
 
-            if (String.IsNullOrEmpty(Settings.BotToken)) {
-                Output("Please create a bot token at https://https://altstream.online/YOUR_CHANNEL/settings?tab=bot");
-                SettingsOK = false;
-            }
-
-            if (String.IsNullOrEmpty(Settings.ChannelName)) {
-                Output($"Please set your channelname in {JsonFile}");
-                SettingsOK = false;
-            }
+            SettingsFile.Save(SettingsFileName);
 
             if (!SettingsOK) {
                 Output("");
@@ -80,9 +109,9 @@ xboxgame");
 
             if (Settings.LogLevel >= 3) { Functions.AltStreamLibLogInit(); }
 
-            Output($"Reading banned commands from {BanListFile}");
+            Log($"Reading banned commands from {BanListFile}",1);
             Settings.BannedCommands = File.ReadAllLines(BanListFile);
-            Output($"Banned commands: {Settings.BannedCommands.Count()}");
+            Output($"Found {Settings.BannedCommands.Count()} banned commands");
 
             MixItUpClient.UpdateMiuCommands().Wait();
             AltStream.Connect(Settings.ChannelName);
