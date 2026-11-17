@@ -142,7 +142,10 @@ namespace FoxedItUp {
         }
         
         private static async void AltEventClient_OnTipReceived(Data obj) {
-            try { 
+            try {
+                Author TempAuthor = obj.Author;
+                FillIncompleteAuthor(ref TempAuthor);
+                obj.Author = TempAuthor;
                 if (Settings.LogLevel >= 6) {
                     Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj), 6);
                 }
@@ -162,6 +165,10 @@ namespace FoxedItUp {
                 if (Settings.LogLevel >= 6) {
                     Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj), 6);
                 }
+                Author TempAuthor = obj.Author;
+                FillIncompleteAuthor(ref TempAuthor);
+                obj.Author = TempAuthor;
+
                 Kofi SubEvent = obj.Kofi;
                 Output("$", obj.Author, $"subscribed at {SubEvent.TierName}", Theme.Subscribe);
 
@@ -180,6 +187,10 @@ namespace FoxedItUp {
         }
         private static async void AltEventClient_OnFollowReceived(Data obj) {
             try {
+                Author TempAuthor = obj.FollowedBy;
+                FillIncompleteAuthor(ref TempAuthor);
+                obj.FollowedBy = TempAuthor;
+
                 Output("*", obj.Author, "followed", Theme.Follow);
 
                 if (MixItUpClient.ChannelFollowed != null) {
@@ -204,6 +215,10 @@ namespace FoxedItUp {
                 }
                 AltStreamLib.EventSub.Chat.Models.Redemption RedeemEvent = obj.Redemption;
 
+                Author TempAuthor = RedeemEvent.From;
+                FillIncompleteAuthor(ref TempAuthor);
+                RedeemEvent.From = TempAuthor;
+
                 Output("*", RedeemEvent.From, $"redeemed \"{RedeemEvent.RewardName}\" for {RedeemEvent.Cost} {RedeemEvent.PointsName}", Theme.Redeem);
 
                 string PointsName = RedeemEvent.RewardName.ToLower();
@@ -227,6 +242,9 @@ namespace FoxedItUp {
                     Log(Newtonsoft.Json.JsonConvert.SerializeObject(obj), 6);
                 }
                 Raid RaidEvent = obj.Raid;
+                Author TempAuthor = obj.Raid.From;
+                FillIncompleteAuthor(ref TempAuthor);
+                obj.Raid.From = TempAuthor;
 
                 Output("*", obj.Author, $"raided with {RaidEvent.Viewers}", Theme.Raid);
                 if (MixItUpClient.ChannelRaided != null) {

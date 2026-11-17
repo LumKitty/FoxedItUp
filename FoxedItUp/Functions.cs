@@ -45,6 +45,8 @@ namespace FoxedItUp {
         }
 
         internal static void Output(string Prefix, Author User, string Message, Color FGCol, Color BGCol) {
+            if (FGCol == null) { FGCol = Theme.Chat; }
+            if (BGCol == null) { BGCol = Theme.Background; }
             Log($"{Prefix} {User.DisplayName} ({User.ChannelName}) {Message}", 1);
             Prefix = Prefix.Pastel(FGCol);
             
